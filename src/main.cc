@@ -317,7 +317,10 @@ crow::response getImage(const crow::request &req, string id, string genre,
 
     vector<string> result = imagesManager.getImage(id, genre, hash, useBase64);
 
-    return crow::response(result.at(0), result.at(1));
+    crow::response resp = crow::response(result.at(0), result.at(1));
+    resp.add_header("Cache-Control", "max-age=31536000");
+
+    return resp;
   } catch (...) {
     return crow::response(404);
   }
@@ -381,8 +384,7 @@ struct AccessGuard {
                      context & /*ctx*/) {
     if (accessKey != nullptr &&
         !(req.get_header_value("Access-Key") == *accessKey ||
-          (req.url_params.get("access-key") != nullptr &&
-           req.url_params.get("access-key") == *accessKey))) {
+          (RE2::FullMatch(req.raw_url, R"(^\/(image|share).*$)")))) {
 
       res.write(R"({"error":"\"Access-Key\" is not found or matched."})");
       res.add_header("Content-Type", "application/json");
@@ -484,7 +486,6 @@ int main() {
   CROW_ROUTE(app, "/search")(getSearch);
 
   CROW_ROUTE(app, "/image/<string>/<string>/<string>")(getImage);
-
   CROW_ROUTE(app, "/share")(getShare);
 
   app.port(8000).multithreaded().run();
