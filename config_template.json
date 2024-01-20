@@ -1,0 +1,16 @@
+{
+    // Required, The base url to this server
+    // It is essential to have "/" at the end
+    "baseUrl": "http://example.com/",
+    // Optional, The base url to the frontend webpage
+    // It is essential to have "/" at the end
+    // If not provided, some features will be disabled
+    "webpageUrl": "http://example.com/",
+    // Optional, if it is set, the users will need the same key to access the server
+    "accessKey": "exampleKey",
+    // Optional, the ids in the list will be excluded
+    "excludeDrivers": [],
+    // Optional, Only the ids in the list will be included
+    // "includeDrivers" have higher precedence than "excludeDrivers"
+    "includeDrivers": []
+}

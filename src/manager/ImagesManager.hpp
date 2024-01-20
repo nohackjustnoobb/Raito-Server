@@ -1,0 +1,25 @@
+#pragma once
+
+#include <cpr/cpr.h>
+#include <nlohmann/json.hpp>
+#include <string>
+
+using json = nlohmann::json;
+using namespace std;
+
+class ImagesManager {
+public:
+  void add(string id, cpr::Header headers);
+
+  void setBaseUrl(string url);
+
+  string getPath(string id, string genre, string dest);
+
+  vector<string> getImage(string id, string genre, string hash, bool asBase64);
+
+private:
+  map<string, cpr::Header> settings;
+  string url;
+};
+
+extern ImagesManager imagesManager;
