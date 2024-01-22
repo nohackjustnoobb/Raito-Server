@@ -183,7 +183,7 @@ public:
 
   ~ActiveAdapter() {
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdelete-abstract-non-virtual-dtor"
+#pragma GCC diagnostic ignored "-Wdelete-non-virtual-dtor"
     delete driver;
 #pragma GCC diagnostic pop
 

@@ -13,7 +13,7 @@ version: "3.7"
 
 services:
   raito-server:
-    image: nohackjustnoobb/raito-server
+    image: nohackjustnoobb/raito-server-cpp
     container_name: raito-server
     restart: unless-stopped
     ports:

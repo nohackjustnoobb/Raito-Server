@@ -96,9 +96,9 @@ vector<Manga *> DM5::getList(Category category, int page, Status status) {
 
   Node *body = new Node(r.text);
   vector<Node *> items = body->findAll("ul.col7.mh-list > li > div.mh-item");
-  for (Node *node : items) {
+  for (Node *node : items)
     result.push_back(extractManga(node));
-  }
+
   releaseMemory(items);
   delete body;
 
@@ -192,13 +192,13 @@ Manga *DM5::extractManga(Node *node) {
 
   // extract thumbnail
   Node *thumbnailNode = node->find("p.mh-cover");
+
   string thumbnailStyle = thumbnailNode->getAttribute("style");
   string thumbnail;
 
   re2::StringPiece url;
-  if (RE2::PartialMatch(thumbnailStyle, RE2("url\\(([^)]+)\\)"), &url)) {
+  if (RE2::PartialMatch(thumbnailStyle, RE2("url\\(([^)]+)\\)"), &url))
     thumbnail = string(url.data(), url.size());
-  }
 
   // release memory allocated
   delete thumbnailNode;
@@ -234,9 +234,8 @@ Manga *DM5::extractDetails(Node *node, const string &id,
   vector<Node *> authorNode = infoNode->findAll("p.subtitle > a");
   vector<string> authors;
 
-  for (Node *node : authorNode) {
+  for (Node *node : authorNode)
     authors.push_back(node->text());
-  }
 
   // release memory allocated
   releaseMemory(authorNode);

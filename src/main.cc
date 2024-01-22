@@ -439,9 +439,9 @@ int main() {
 
   // TODO You can add your own drivers here:
   BaseDriver *drivers[] = {
-      new ActiveAdapter(new MHG()),
-      new DM5(),
       new MHR(),
+      new DM5(),
+      new ActiveAdapter(new MHG()),
   };
 
   if (config.contains("includeDrivers")) {
