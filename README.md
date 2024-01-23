@@ -1,6 +1,6 @@
 # Raito Server (C++ version)
 
-TODO: description
+This repository is a submodule of [Raito-Server](https://github.com/nohackjustnoobb/Raito-Server.git). If you don't know what the server is for, check this repository [Raito-Manga](ttps://github.com/nohackjustnoobb/Raito-Manga.git). This module contains 3 drivers including `MHR`, `DM5`,`MHG`.
 
 ## Quick Start
 
@@ -27,3 +27,32 @@ services:
 ```bash
 sudo docker-compose up -d
 ```
+
+## Manual Setup (Not Recommended)
+
+Make sure that you have [Conan](https://conan.io), `cmake`, and `git` installed before setting up.
+
+```bash
+# 1. Clone this repository
+git clone https://github.com/nohackjustnoobb/Raito-Server-Cpp.git
+cd Raito-Server-Cpp
+
+# 2. Create and Edit the config file
+cp config_template.json config.json
+nano config.json
+
+# 3. Install the dependencies
+conan profile detect
+conan install . --output-folder=build --build=missing
+
+# 4. Build the server
+cd build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
+make
+
+# 5. Run the server
+chmod +x Raito-Server
+./Raito-Server
+```
+
+You can execute the commands one by one or copy all of them at once and create a shell script.
