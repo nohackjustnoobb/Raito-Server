@@ -383,7 +383,8 @@ struct AccessGuard {
   void before_handle(crow::request &req, crow::response &res,
                      context & /*ctx*/) {
     if (accessKey != nullptr &&
-        !(req.get_header_value("Access-Key") == *accessKey ||
+        !(req.method == crow::HTTPMethod::OPTIONS ||
+          req.get_header_value("Access-Key") == *accessKey ||
           (RE2::FullMatch(req.raw_url, R"(^\/(image|share).*$)")))) {
 
       res.write(R"({"error":"\"Access-Key\" is not found or matched."})");
