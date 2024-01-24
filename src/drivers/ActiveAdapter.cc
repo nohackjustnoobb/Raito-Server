@@ -52,7 +52,11 @@ public:
     // start a thread
     thread(&ActiveAdapter::updater, this).detach();
 
-    // TODO proxy settings
+    ifstream ifs("../config.json");
+    json config;
+    ifs >> config;
+    if (config.contains("proxies"))
+      proxies = config["proxies"].get<vector<string>>();
   }
 
   vector<Manga *> getManga(vector<string> ids, bool showDetails) override {
@@ -114,12 +118,23 @@ public:
   vector<string> getChapter(string id, string extraData) override {
     CHECK_ONLINE()
 
+    string proxy;
+    if (proxies.size() >= 2) {
+      if (proxyCount < 1 || proxyCount >= proxies.size())
+        proxyCount = 1;
+
+      proxy = proxies.at(proxyCount);
+      unique_lock<std::mutex> guard(mutex);
+      proxyCount++;
+      guard.unlock();
+    }
+
     SQLite::Statement query(*db, "SELECT * FROM CHAPTER WHERE ID = ?");
     query.bind(1, id);
     query.executeStep();
 
     if (query.getColumn(5).isNull()) {
-      vector<string> result = driver->getChapter(id, extraData);
+      vector<string> result = driver->getChapter(id, extraData, proxy);
 
       db->exec(fmt::format("UPDATE CHAPTER SET URLS = '{}' WHERE ID = '{}' AND "
                            "CHAPTERS_ID = '{}' AND IS_EXTRA = {}",
@@ -196,6 +211,9 @@ private:
   bool isOnline = true;
   int counter = 300;
   vector<string> waitingList;
+  vector<string> proxies;
+  int proxyCount = 0;
+  std::mutex mutex;
 
   Manga *toManga(SQLite::Statement &query, bool showDetails = false) {
     if (showDetails) {
@@ -223,6 +241,10 @@ private:
     if (!isOnline)
       return;
 
+    string proxy;
+    if (proxies.size() >= 1)
+      proxy = proxies.at(0);
+
     json state;
     string id;
 
@@ -231,7 +253,7 @@ private:
       if (counter >= 300) {
         vector<PreviewManga> manga;
         try {
-          manga = driver->getUpdates();
+          manga = driver->getUpdates(proxy);
         } catch (...) {
           continue;
         }
@@ -275,7 +297,7 @@ private:
         waitingList.pop_back();
         try {
           DetailsManga *manga =
-              (DetailsManga *)driver->getManga({id}, true).at(0);
+              (DetailsManga *)driver->getManga({id}, true, proxy).at(0);
 
           ostringstream categories;
           for (size_t i = 0; i < manga->categories.size(); ++i) {

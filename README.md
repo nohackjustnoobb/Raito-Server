@@ -1,6 +1,6 @@
 # Raito Server (C++ version)
 
-This repository is a submodule of [Raito-Server](https://github.com/nohackjustnoobb/Raito-Server.git). If you don't know what the server is for, check this repository [Raito-Manga](ttps://github.com/nohackjustnoobb/Raito-Manga.git). This module contains 3 drivers including `MHR`, `DM5`,`MHG`.
+This repository is a submodule of [Raito-Server](https://github.com/nohackjustnoobb/Raito-Server). If you don't know what the server is for, check this repository [Raito-Manga](https://github.com/nohackjustnoobb/Raito-Manga). This module contains 3 drivers including `MHR`, `DM5`,`MHG`.
 
 ## Quick Start
 
@@ -30,7 +30,7 @@ sudo docker-compose up -d
 
 ## Manual Setup (Not Recommended)
 
-Make sure that you have [Conan](https://conan.io), `cmake`, and `git` installed before setting up.
+Make sure that you have [Conan](https://conan.io), and `cmake` installed before setting up.
 
 ```bash
 # 1. Clone this repository

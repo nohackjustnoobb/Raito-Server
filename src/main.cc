@@ -449,7 +449,7 @@ int main() {
         config["includeDrivers"].get<vector<string>>();
 
     for (const auto &driver : drivers)
-      if (std::find(includeDrivers.begin(), includeDrivers.end(), driver->id) !=
+      if (find(includeDrivers.begin(), includeDrivers.end(), driver->id) !=
           includeDrivers.end())
         driversManager.add(driver);
 

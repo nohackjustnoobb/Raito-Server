@@ -1,5 +1,7 @@
 CMakeUserPresets.json
 
+data/
+
 build/
 
 config.json

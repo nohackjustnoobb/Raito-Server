@@ -12,5 +12,7 @@
     "excludeDrivers": [],
     // Optional, Only the ids in the list will be included
     // "includeDrivers" have higher precedence than "excludeDrivers"
-    "includeDrivers": []
+    "includeDrivers": [],
+    // Optional, Only active drivers will use the proxy
+    "proxies": []
 }
