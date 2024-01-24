@@ -396,6 +396,8 @@ struct AccessGuard {
   void after_handle(crow::request & /*req*/, crow::response &res,
                     context & /*ctx*/) {
     res.add_header("Access-Control-Allow-Origin", "*");
+    res.add_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+    res.add_header("Access-Control-Allow-Headers", "Access-Key");
     res.add_header("Access-Control-Expose-Headers", "Is-Next");
   }
 };
