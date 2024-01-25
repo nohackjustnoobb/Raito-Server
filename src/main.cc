@@ -1,13 +1,14 @@
 #include "crow.h"
 #include "manager/DriversManager.hpp"
 #include "manager/ImagesManager.hpp"
-#include "utils.hpp"
+#include "utils/utils.hpp"
 
 // Drivers
 #include "drivers/ActiveAdapter.cc"
 #include "drivers/DM5/DM5.hpp"
 #include "drivers/MHG/MHG.hpp"
 #include "drivers/MHR/MHR.hpp"
+#include "utils/converter.hpp"
 
 #include <chrono>
 #include <fstream>
@@ -19,7 +20,7 @@
 #include <thread>
 
 #define CROW_MAIN
-#define RAITO_SERVER_VERSION "0.1.0-beta.0"
+#define RAITO_SERVER_VERSION "0.1.0-beta.1"
 
 #define GET_DRIVER()                                                           \
   char *driverId = req.url_params.get("driver");                               \
@@ -327,6 +328,7 @@ crow::response getImage(const crow::request &req, string id, string genre,
 }
 
 string *webpageUrl;
+Converter converter;
 
 crow::response getShare(const crow::request &req) {
   if (webpageUrl == nullptr)
@@ -363,8 +365,8 @@ crow::response getShare(const crow::request &req) {
     resp.set_header("Content-Type", crow::mime_types.at("html"));
     resp.body = fmt::format(
         R"(<!doctype html><html lang=en><meta content="0;url={}share?driver={}&id={}"http-equiv=refresh><meta content="{}" property=og:title><meta content="{}" property=og:image><meta content="{}" property=og:description><meta content=website property=og:type>)",
-        *webpageUrl, driverId, id, manga->title, manga->thumbnail,
-        manga->description);
+        *webpageUrl, driverId, id, converter.toTraditional(manga->title),
+        manga->thumbnail, converter.toTraditional(manga->description));
 
     return resp;
   } catch (...) {
@@ -439,6 +441,10 @@ int main() {
             "will be disabled"
          << endl;
   }
+
+  // set image proxy
+  if (config.contains("imageProxy"))
+    imagesManager.setProxy(config["imageProxy"].get<string>());
 
   // TODO You can add your own drivers here:
   BaseDriver *drivers[] = {

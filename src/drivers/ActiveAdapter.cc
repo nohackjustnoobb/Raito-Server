@@ -1,7 +1,7 @@
 #include "../models/ActiveDriver.hpp"
 #include "../models/BaseDriver.hpp"
 #include "../models/Manga.hpp"
-#include "../utils.hpp"
+#include "../utils/utils.hpp"
 
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <algorithm>

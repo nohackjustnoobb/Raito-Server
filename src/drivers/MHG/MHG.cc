@@ -3,6 +3,7 @@
 #include "lz-string.hpp"
 #include "utils.cc"
 
+#include <algorithm>
 #include <cpr/cpr.h>
 #include <ctime>
 #include <locale>
@@ -340,9 +341,9 @@ vector<string> MHG::decodeChapters(const string &encoded, const int &len1,
   string baseUrl = "https://i.hamreus.com" + data["path"].get<string>();
 
   vector<string> result;
-  for (const string &item : data["files"].get<vector<string>>()) {
+  for (const string &item : data["files"].get<vector<string>>())
     result.push_back(baseUrl + item);
-  }
+  reverse(result.begin(), result.end());
 
   return result;
 }

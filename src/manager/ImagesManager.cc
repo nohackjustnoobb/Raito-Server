@@ -1,5 +1,5 @@
 #include "ImagesManager.hpp"
-#include "../utils.hpp"
+#include "../utils/utils.hpp"
 
 #include "crow.h"
 #include <filesystem>
@@ -13,6 +13,8 @@ void ImagesManager::add(string id, cpr::Header headers) {
 }
 
 void ImagesManager::setBaseUrl(string url) { this->url = url; }
+
+void ImagesManager::setProxy(string proxy) { this->proxy = new string(proxy); }
 
 string ImagesManager::getPath(string id, string genre, string dest) {
   filesystem::create_directories(fmt::format("../image/{}/{}", id, genre));
@@ -68,7 +70,13 @@ vector<string> ImagesManager::getImage(string id, string genre, string hash,
   ifs.close();
 
   // if not cached, fetch the image
-  cpr::Response r = cpr::Get(cpr::Url(url), settings[id]);
+  cpr::Response r;
+  if (this->proxy != nullptr)
+    r = cpr::Get(cpr::Url(url), settings[id], cpr::Timeout{5000},
+                 cpr::Proxies{{"https", *this->proxy}, {"http", *this->proxy}});
+  else
+    r = cpr::Get(cpr::Url(url), settings[id], cpr::Timeout{5000});
+
   string encoded = crow::utility::base64encode(r.text, r.text.size());
 
   // cache the image

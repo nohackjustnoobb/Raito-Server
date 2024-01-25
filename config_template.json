@@ -14,5 +14,7 @@
     // "includeDrivers" have higher precedence than "excludeDrivers"
     "includeDrivers": [],
     // Optional, Only active drivers will use the proxy
-    "proxies": []
+    "proxies": [],
+    // Optional, proxy that only used when fetching images
+    "imageProxy": "sock5://example.com"
 }
