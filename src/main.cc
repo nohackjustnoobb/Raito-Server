@@ -20,7 +20,7 @@
 #include <thread>
 
 #define CROW_MAIN
-#define RAITO_SERVER_VERSION "0.1.0-beta.1"
+#define RAITO_SERVER_VERSION "0.1.0-beta.2"
 
 #define GET_DRIVER()                                                           \
   char *driverId = req.url_params.get("driver");                               \

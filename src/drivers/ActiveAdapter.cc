@@ -85,8 +85,8 @@ public:
     if (showDetails) {
       // Get the chapters
       SQLite::Statement chapterQuery(
-          *db,
-          "SELECT * FROM CHAPTER WHERE CHAPTERS_ID in (" + oss.str() + ")");
+          *db, "SELECT * FROM CHAPTER WHERE CHAPTERS_ID in (" + oss.str() +
+                   ") ORDER BY -IDX");
 
       while (chapterQuery.executeStep()) {
         Chapter chapter = {chapterQuery.getColumn(3).getString(),
