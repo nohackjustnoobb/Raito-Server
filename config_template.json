@@ -1,8 +1,8 @@
 {
-    // Required, The base url to this server
+    // Required, the base url to this server
     // It is essential to have "/" at the end
     "baseUrl": "http://example.com/",
-    // Optional, The base url to the frontend webpage
+    // Optional, the base url to the frontend webpage
     // It is essential to have "/" at the end
     // If not provided, some features will be disabled
     "webpageUrl": "http://example.com/",
@@ -10,10 +10,10 @@
     "accessKey": "exampleKey",
     // Optional, the ids in the list will be excluded
     "excludeDrivers": [],
-    // Optional, Only the ids in the list will be included
+    // Optional, only the ids in the list will be included
     // "includeDrivers" have higher precedence than "excludeDrivers"
     "includeDrivers": [],
-    // Optional, Only active drivers will use the proxy
+    // Optional, only active drivers will use the proxy
     "proxies": [],
     // Optional, proxy that only used when fetching images
     "imageProxy": "sock5://example.com"

@@ -3,7 +3,6 @@
 #include "lz-string.hpp"
 #include "utils.cc"
 
-#include <algorithm>
 #include <cpr/cpr.h>
 #include <ctime>
 #include <locale>
@@ -15,7 +14,7 @@ using namespace MHG_utils;
 
 MHG::MHG() {
   id = "MHG";
-  version = "0.1.0-beta.0";
+  version = "0.1.0-beta.1";
 
   supportSuggestion = false;
   recommendedChunkSize = 5;
@@ -146,9 +145,8 @@ vector<Manga *> MHG::search(string keyword, int page) {
   vector<Manga *> result;
   vector<Node *> items = body->findAll("div.book-result > ul > li.cf");
 
-  for (Node *node : items) {
+  for (Node *node : items)
     result.push_back(extractManga(node));
-  }
 
   delete body;
   releaseMemory(items);
@@ -277,28 +275,25 @@ Manga *MHG::extractDetails(Node *node, const string &id,
 
   vector<Node *> chaptersNode;
   Node *tryAdult = node->tryFind("#__VIEWSTATE");
-  Node *hiddenElem;
 
   if (tryAdult == nullptr) {
     chaptersNode = node->findAll("div.chapter-list");
   } else {
     string encodedElements = tryAdult->getAttribute("value");
-    hiddenElem = new Node(convert.to_bytes(
+    Node *hiddenElem = new Node(convert.to_bytes(
         lzstring::decompressFromBase64(convert.from_bytes(encodedElements))));
     chaptersNode = hiddenElem->findAll("div.chapter-list");
+    delete hiddenElem;
     delete tryAdult;
   }
 
   if (chaptersNode.size() >= 1)
     pushChapters(chaptersNode.at(0), serial);
 
-  if (chaptersNode.size() >= 2) {
-    for (size_t i = 1; i < chaptersNode.size(); ++i) {
-      pushChapters(chaptersNode.at(0), extra);
-    }
-  }
+  if (chaptersNode.size() >= 2)
+    for (size_t i = 1; i < chaptersNode.size(); i++)
+      pushChapters(chaptersNode.at(i), extra);
 
-  delete hiddenElem;
   releaseMemory(chaptersNode);
 
   return new DetailsManga(this, id, title, thumbnail, latest, authors, isEnded,
@@ -343,7 +338,6 @@ vector<string> MHG::decodeChapters(const string &encoded, const int &len1,
   vector<string> result;
   for (const string &item : data["files"].get<vector<string>>())
     result.push_back(baseUrl + item);
-  reverse(result.begin(), result.end());
 
   return result;
 }
