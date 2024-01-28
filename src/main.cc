@@ -20,7 +20,7 @@
 #include <thread>
 
 #define CROW_MAIN
-#define RAITO_SERVER_VERSION "0.1.0-beta.2"
+#define RAITO_SERVER_VERSION "0.1.0-beta.3"
 
 #define GET_DRIVER()                                                           \
   char *driverId = req.url_params.get("driver");                               \
@@ -224,7 +224,7 @@ crow::response getManga(const crow::request &req) {
 
     releaseMemory(mangas);
 
-    return crow::response("json", result.dump());
+    return crow::response(200, "json", result.dump());
   } catch (...) {
     return crow::response(
         400, "json",
@@ -400,7 +400,7 @@ struct AccessGuard {
                     context & /*ctx*/) {
     res.add_header("Access-Control-Allow-Origin", "*");
     res.add_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-    res.add_header("Access-Control-Allow-Headers", "Access-Key");
+    res.add_header("Access-Control-Allow-Headers", "Access-Key, Content-Type");
     res.add_header("Access-Control-Expose-Headers", "Is-Next");
   }
 };
