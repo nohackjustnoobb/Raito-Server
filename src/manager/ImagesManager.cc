@@ -77,6 +77,9 @@ vector<string> ImagesManager::getImage(string id, string genre, string hash,
   else
     r = cpr::Get(cpr::Url(url), settings[id], cpr::Timeout{5000});
 
+  if (r.status_code == 0)
+    throw "Request timeout";
+
   string encoded = crow::utility::base64encode(r.text, r.text.size());
 
   // cache the image

@@ -20,7 +20,7 @@
 #include <thread>
 
 #define CROW_MAIN
-#define RAITO_SERVER_VERSION "0.1.0-beta.3"
+#define RAITO_SERVER_VERSION "0.1.0-beta.4"
 
 #define GET_DRIVER()                                                           \
   char *driverId = req.url_params.get("driver");                               \
@@ -477,6 +477,7 @@ int main() {
 
   // server initialization
   crow::App<AccessGuard> app;
+  app.loglevel(crow::LogLevel::INFO);
 
   if (config.contains("accessKey") && !config["accessKey"].is_null() &&
       config["accessKey"].get<string>() != "") {

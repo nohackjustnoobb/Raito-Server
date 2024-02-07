@@ -14,7 +14,7 @@ using namespace MHG_utils;
 
 MHG::MHG() {
   id = "MHG";
-  version = "0.1.0-beta.1";
+  version = "0.1.0-beta.2";
 
   supportSuggestion = false;
   recommendedChunkSize = 5;
@@ -36,7 +36,7 @@ vector<Manga *> MHG::getManga(vector<string> ids, bool showDetails,
   mutex mutex;
   auto fetchId = [&](const string &id, vector<Manga *> &result) {
     try {
-      cpr::Url url{baseUrl + "comic/" + id};
+      cpr::Url url{baseUrl + "comic/" + id + "/"};
       cpr::Response r = proxy == "" ? cpr::Get(url, cpr::Timeout{5000})
                                     : cpr::Get(url, cpr::Timeout{5000},
                                                cpr::Proxies{{"https", proxy}});

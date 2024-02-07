@@ -1,3 +1,5 @@
+#include "crow.h"
+
 #include "../models/ActiveDriver.hpp"
 #include "../models/BaseDriver.hpp"
 #include "../models/Manga.hpp"
@@ -49,14 +51,14 @@ public:
     }
     inFile.close();
 
-    // start a thread
-    thread(&ActiveAdapter::updater, this).detach();
-
     ifstream ifs("../config.json");
     json config;
     ifs >> config;
     if (config.contains("proxies"))
       proxies = config["proxies"].get<vector<string>>();
+
+    // start a thread
+    thread(&ActiveAdapter::updater, this).detach();
   }
 
   vector<Manga *> getManga(vector<string> ids, bool showDetails) override {
@@ -253,8 +255,12 @@ private:
       if (counter >= 300) {
         vector<PreviewManga> manga;
         try {
+          CROW_LOG_INFO << fmt::format("ActiveDriver - {}: getting updates",
+                                       this->id);
           manga = driver->getUpdates(proxy);
         } catch (...) {
+          CROW_LOG_INFO << fmt::format(
+              "ActiveDriver - {}: failed to get updates", this->id);
           continue;
         }
 
@@ -296,6 +302,8 @@ private:
         id = waitingList.back();
         waitingList.pop_back();
         try {
+          CROW_LOG_INFO << fmt::format("ActiveDriver - {}: getting {}",
+                                       this->id, id);
           DetailsManga *manga =
               (DetailsManga *)driver->getManga({id}, true, proxy).at(0);
 
@@ -361,6 +369,8 @@ private:
           updateChapter(manga->chapters.serial, false);
           updateChapter(manga->chapters.extra, true);
         } catch (...) {
+          CROW_LOG_INFO << fmt::format(
+              "ActiveDriver - {}: failed to getting {}", this->id, id);
           waitingList.insert(waitingList.begin(), id);
         }
       }
