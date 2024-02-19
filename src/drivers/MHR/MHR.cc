@@ -10,11 +10,17 @@
 #include <nlohmann/json.hpp>
 #include <thread>
 
+#define TIMEOUT_LIMIT 5000
+
+#define CHECK_TIMEOUT()                                                        \
+  if (r.status_code == 0)                                                      \
+    throw "Request timeout";
+
 using namespace MHR_utils;
 
 MHR::MHR() {
   id = "MHR";
-  version = "0.1.0-beta.0";
+  version = "0.1.0-beta.1";
 
   supportSuggestion = true;
   for (const auto &pair : categoryId) {
@@ -40,9 +46,12 @@ vector<Manga *> MHR::getManga(vector<string> ids, bool showDetails) {
         query.insert(baseQuery.begin(), baseQuery.end());
         query["gsn"] = hash(query);
 
-        cpr::Response r =
-            cpr::Get(cpr::Url{baseUrl + "v1/manga/getDetail"},
-                     mapToParameters(query), header, cpr::Timeout{5000});
+        cpr::Response r = cpr::Get(cpr::Url{baseUrl + "v1/manga/getDetail"},
+                                   mapToParameters(query), header,
+                                   cpr::Timeout{TIMEOUT_LIMIT});
+
+        CHECK_TIMEOUT()
+
         json data = json::parse(r.text);
 
         Manga *manga = convertDetails(data["response"]);
@@ -83,9 +92,11 @@ vector<Manga *> MHR::getManga(vector<string> ids, bool showDetails) {
 
     // add content-type to headers temporarily
     header["Content-Type"] = "application/json";
-    cpr::Response r =
-        cpr::Post(cpr::Url{baseUrl + "v2/manga/getBatchDetail"},
-                  mapToParameters(query), header, cpr::Body{dumpBody});
+    cpr::Response r = cpr::Post(
+        cpr::Url{baseUrl + "v2/manga/getBatchDetail"}, mapToParameters(query),
+        header, cpr::Body{dumpBody}, cpr::Timeout{TIMEOUT_LIMIT});
+
+    CHECK_TIMEOUT()
 
     // remove content-type from headers
     header.erase("Content-Type");
@@ -112,7 +123,9 @@ vector<string> MHR::getChapter(string id, string extraData) {
 
   cpr::Response r =
       cpr::Get(cpr::Url{baseUrl + "v1/manga/getRead"}, mapToParameters(query),
-               header, cpr::Timeout{5000});
+               header, cpr::Timeout{TIMEOUT_LIMIT});
+
+  CHECK_TIMEOUT()
 
   json data = json::parse(r.text)["response"];
 
@@ -145,7 +158,9 @@ vector<Manga *> MHR::getList(Category category, int page, Status status) {
 
   cpr::Response r =
       cpr::Get(cpr::Url{baseUrl + "v2/manga/getCategoryMangas"},
-               mapToParameters(query), header, cpr::Timeout{5000});
+               mapToParameters(query), header, cpr::Timeout{TIMEOUT_LIMIT});
+  CHECK_TIMEOUT()
+
   json data = json::parse(r.text);
 
   vector<Manga *> result;
@@ -169,7 +184,9 @@ vector<string> MHR::getSuggestion(string keyword) {
 
   cpr::Response r =
       cpr::Get(cpr::Url{baseUrl + "v1/search/getKeywordMatch"},
-               mapToParameters(query), header, cpr::Timeout{5000});
+               mapToParameters(query), header, cpr::Timeout{TIMEOUT_LIMIT});
+
+  CHECK_TIMEOUT()
 
   // parse & extract the data
   json data = json::parse(r.text);
@@ -196,7 +213,10 @@ vector<Manga *> MHR::search(string keyword, int page) {
 
   cpr::Response r =
       cpr::Get(cpr::Url{baseUrl + "v1/search/getSearchManga"},
-               mapToParameters(query), header, cpr::Timeout{5000});
+               mapToParameters(query), header, cpr::Timeout{TIMEOUT_LIMIT});
+
+  CHECK_TIMEOUT()
+
   json data = json::parse(r.text);
 
   vector<string> result;
@@ -208,7 +228,8 @@ vector<Manga *> MHR::search(string keyword, int page) {
 };
 
 bool MHR::checkOnline() {
-  return cpr::Get(cpr::Url{baseUrl}, cpr::Timeout{5000}).status_code != 0;
+  return cpr::Get(cpr::Url{baseUrl}, cpr::Timeout{TIMEOUT_LIMIT}).status_code !=
+         0;
 };
 
 // create a MD5 hash from a list of strings

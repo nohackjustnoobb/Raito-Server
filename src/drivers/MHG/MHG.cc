@@ -10,11 +10,17 @@
 #include <nlohmann/json.hpp>
 #include <thread>
 
+#define TIMEOUT_LIMIT 5000
+
+#define CHECK_TIMEOUT()                                                        \
+  if (r.status_code == 0)                                                      \
+    throw "Request timeout";
+
 using namespace MHG_utils;
 
 MHG::MHG() {
   id = "MHG";
-  version = "0.1.0-beta.2";
+  version = "0.1.0-beta.3";
 
   supportSuggestion = false;
   recommendedChunkSize = 5;
@@ -37,9 +43,11 @@ vector<Manga *> MHG::getManga(vector<string> ids, bool showDetails,
   auto fetchId = [&](const string &id, vector<Manga *> &result) {
     try {
       cpr::Url url{baseUrl + "comic/" + id + "/"};
-      cpr::Response r = proxy == "" ? cpr::Get(url, cpr::Timeout{5000})
-                                    : cpr::Get(url, cpr::Timeout{5000},
+      cpr::Response r = proxy == "" ? cpr::Get(url, cpr::Timeout{TIMEOUT_LIMIT})
+                                    : cpr::Get(url, cpr::Timeout{TIMEOUT_LIMIT},
                                                cpr::Proxies{{"https", proxy}});
+
+      CHECK_TIMEOUT()
 
       Node *body = new Node(r.text);
 
@@ -73,9 +81,11 @@ vector<string> MHG::getChapter(string id, string extraData, string proxy) {
   vector<string> result;
 
   cpr::Url url{baseUrl + "comic/" + extraData + "/" + id + ".html"};
-  cpr::Response r = proxy == "" ? cpr::Get(url, cpr::Timeout{5000})
-                                : cpr::Get(url, cpr::Timeout{5000},
+  cpr::Response r = proxy == "" ? cpr::Get(url, cpr::Timeout{TIMEOUT_LIMIT})
+                                : cpr::Get(url, cpr::Timeout{TIMEOUT_LIMIT},
                                            cpr::Proxies{{"https", proxy}});
+
+  CHECK_TIMEOUT()
 
   re2::StringPiece input(r.text);
   string encoded, valuesString, len1String, len2String;
@@ -120,7 +130,10 @@ vector<Manga *> MHG::getList(Category category, int page, Status status) {
   // add page
   url += "index_p" + to_string(page) + ".html";
 
-  cpr::Response r = cpr::Get(cpr::Url{url}, cpr::Timeout{5000});
+  cpr::Response r = cpr::Get(cpr::Url{url}, cpr::Timeout{TIMEOUT_LIMIT});
+
+  CHECK_TIMEOUT()
+
   Node *body = new Node(r.text);
 
   vector<Manga *> result;
@@ -139,7 +152,10 @@ vector<Manga *> MHG::getList(Category category, int page, Status status) {
 vector<Manga *> MHG::search(string keyword, int page) {
   cpr::Response r = cpr::Get(
       cpr::Url{baseUrl + "s/" + keyword + "_p" + to_string(page) + ".html"},
-      cpr::Timeout{5000});
+      cpr::Timeout{TIMEOUT_LIMIT});
+
+  CHECK_TIMEOUT()
+
   Node *body = new Node(r.text);
 
   vector<Manga *> result;
@@ -156,9 +172,11 @@ vector<Manga *> MHG::search(string keyword, int page) {
 
 vector<PreviewManga> MHG::getUpdates(string proxy) {
   cpr::Url url{"https://tw.manhuagui.com/update/d3.html"};
-  cpr::Response r = proxy == "" ? cpr::Get(url, cpr::Timeout{5000})
-                                : cpr::Get(url, cpr::Timeout{5000},
+  cpr::Response r = proxy == "" ? cpr::Get(url, cpr::Timeout{TIMEOUT_LIMIT})
+                                : cpr::Get(url, cpr::Timeout{TIMEOUT_LIMIT},
                                            cpr::Proxies{{"https", proxy}});
+
+  CHECK_TIMEOUT()
 
   Node *body = new Node(r.text);
 
@@ -187,7 +205,8 @@ vector<PreviewManga> MHG::getUpdates(string proxy) {
 }
 
 bool MHG::checkOnline() {
-  return cpr::Get(cpr::Url{baseUrl}, cpr::Timeout{5000}).status_code != 0;
+  return cpr::Get(cpr::Url{baseUrl}, cpr::Timeout{TIMEOUT_LIMIT}).status_code !=
+         0;
 };
 
 Manga *MHG::extractDetails(Node *node, const string &id,

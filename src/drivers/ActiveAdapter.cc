@@ -64,55 +64,48 @@ public:
   vector<Manga *> getManga(vector<string> ids, bool showDetails) override {
     CHECK_ONLINE()
 
-    map<string, Chapters> cacheChapters;
-
     ostringstream oss;
     oss << "'";
     for (size_t i = 0; i < ids.size(); ++i) {
       oss << ids[i];
       if (i < ids.size() - 1)
         oss << "', '";
-      if (showDetails)
-        cacheChapters[ids[i]] = {};
     }
     oss << "'";
 
-    SQLite::Statement query(*db, "SELECT * FROM MANGA WHERE ID in (" +
+    SQLite::Statement query(*db, "SELECT * FROM MANGA M JOIN CHAPTERS C ON "
+                                 "C.MANGA_ID = M.ID WHERE ID in (" +
                                      oss.str() + ")");
 
-    vector<Manga *> result;
-    while (query.executeStep())
-      result.push_back(toManga(query, showDetails));
+    map<string, Manga *> resultMap;
+    while (query.executeStep()) {
+      Manga *manga = toManga(query, showDetails);
+      resultMap[manga->id] = manga;
+    }
 
     if (showDetails) {
       // Get the chapters
       SQLite::Statement chapterQuery(
           *db, "SELECT * FROM CHAPTER WHERE CHAPTERS_ID in (" + oss.str() +
-                   ") ORDER BY -IDX");
+                   ") ORDER BY CHAPTERS_ID, -IDX");
 
       while (chapterQuery.executeStep()) {
         Chapter chapter = {chapterQuery.getColumn(3).getString(),
                            chapterQuery.getColumn(1).getString()};
 
         if (chapterQuery.getColumn(4).getInt() == 1)
-          cacheChapters[chapterQuery.getColumn(0).getString()].extra.push_back(
-              chapter);
+          ((DetailsManga *)resultMap[chapterQuery.getColumn(0).getString()])
+              ->chapters.extra.push_back(chapter);
         else
-          cacheChapters[chapterQuery.getColumn(0).getString()].serial.push_back(
-              chapter);
+          ((DetailsManga *)resultMap[chapterQuery.getColumn(0).getString()])
+              ->chapters.serial.push_back(chapter);
       }
-
-      // Get the extra data
-      SQLite::Statement chaptersQuery(
-          *db, "SELECT * FROM CHAPTERS WHERE MANGA_ID in (" + oss.str() + ")");
-      while (chaptersQuery.executeStep())
-        cacheChapters[chaptersQuery.getColumn(0).getString()].extraData =
-            chaptersQuery.getColumn(1).getString();
-
-      // assign it to the manga
-      for (Manga *manga : result)
-        ((DetailsManga *)manga)->chapters = cacheChapters[manga->id];
     }
+
+    vector<Manga *> result;
+    // assign it to the manga
+    for (auto const &pair : resultMap)
+      result.push_back(pair.second);
 
     return result;
   }
@@ -230,7 +223,7 @@ private:
           query.getColumn(1).getString(), query.getColumn(7).getString(),
           split(query.getColumn(5).getString(), R"(\|)"),
           query.getColumn(4).getInt() == 1, query.getColumn(3).getString(),
-          categories, {});
+          categories, {{}, {}, query.getColumn(10).getString()});
     } else {
       return new Manga(
           this, query.getColumn(0).getString(), query.getColumn(2).getString(),
@@ -285,9 +278,8 @@ private:
           if (query.getColumn(7).getString().find(latestMap[id]) ==
                   string::npos &&
               find(waitingList.begin(), waitingList.end(), id) ==
-                  waitingList.end()) {
+                  waitingList.end())
             waitingList.insert(waitingList.begin(), id);
-          }
 
           latestMap.erase(id);
         }

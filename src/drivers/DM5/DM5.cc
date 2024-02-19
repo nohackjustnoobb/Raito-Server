@@ -10,11 +10,17 @@
 
 #include <iostream>
 
+#define TIMEOUT_LIMIT 5000
+
+#define CHECK_TIMEOUT()                                                        \
+  if (r.status_code == 0)                                                      \
+    throw "Request timeout";
+
 using namespace DM5_utils;
 
 DM5::DM5() {
   id = "DM5";
-  version = "0.1.0-beta.0";
+  version = "0.1.0-beta.1";
 
   supportSuggestion = true;
   recommendedChunkSize = 10;
@@ -35,7 +41,10 @@ vector<Manga *> DM5::getManga(vector<string> ids, bool showDetails) {
     try {
       cpr::Response r =
           cpr::Get(cpr::Url{baseUrl + "manhua-" + id}, header,
-                   cpr::Cookies{{"isAdult", "1"}}, cpr::Timeout{5000});
+                   cpr::Cookies{{"isAdult", "1"}}, cpr::Timeout{TIMEOUT_LIMIT});
+
+      CHECK_TIMEOUT()
+
       Node *body = new Node(r.text);
 
       Manga *manga = extractDetails(body, id, showDetails);
@@ -66,7 +75,9 @@ vector<Manga *> DM5::getManga(vector<string> ids, bool showDetails) {
 
 vector<string> DM5::getChapter(string id, string extraData) {
   cpr::Response r = cpr::Get(cpr::Url{"https://www.manhuaren.com/m" + id},
-                             header, cpr::Timeout{5000});
+                             header, cpr::Timeout{TIMEOUT_LIMIT});
+
+  CHECK_TIMEOUT()
 
   vector<string> result;
   re2::StringPiece input(r.text);
@@ -90,7 +101,9 @@ vector<Manga *> DM5::getList(Category category, int page, Status status) {
   cpr::Response r = cpr::Get(
       cpr::Url{baseUrl + "manhua-list-tag" + to_string(categoryId[category]) +
                "-st" + to_string(status) + "-p" + to_string(page)},
-      cpr::Timeout{5000}, header);
+      cpr::Timeout{TIMEOUT_LIMIT}, header);
+
+  CHECK_TIMEOUT()
 
   vector<Manga *> result;
 
@@ -109,7 +122,9 @@ vector<string> DM5::getSuggestion(string keyword) {
   cpr::Response r = cpr::Get(
       cpr::Url{baseUrl + "search.ashx?t=" +
                DM5_utils::urlEncode(chineseConverter.toSimplified(keyword))},
-      cpr::Timeout{5000}, header);
+      cpr::Timeout{TIMEOUT_LIMIT}, header);
+
+  CHECK_TIMEOUT()
 
   vector<string> result;
 
@@ -129,7 +144,9 @@ vector<Manga *> DM5::search(string keyword, int page) {
       cpr::Url{baseUrl + "search?title=" +
                DM5_utils::urlEncode(chineseConverter.toSimplified(keyword)) +
                "&page=" + to_string(page)},
-      header, cpr::Timeout{5000});
+      header, cpr::Timeout{TIMEOUT_LIMIT});
+
+  CHECK_TIMEOUT()
 
   vector<Manga *> result;
   Node *body = new Node(r.text);
