@@ -1,5 +1,6 @@
 #include "crow.h"
 
+#include "../manager/DriversManager.hpp"
 #include "../models/ActiveDriver.hpp"
 #include "../models/BaseDriver.hpp"
 #include "../models/Manga.hpp"
@@ -234,6 +235,12 @@ private:
 
   void updater() {
     if (!isOnline)
+      return;
+
+    while (!driversManager.isReady)
+      this_thread::sleep_for(chrono::milliseconds(100));
+
+    if (driversManager.get(this->id) == nullptr)
       return;
 
     string proxy;

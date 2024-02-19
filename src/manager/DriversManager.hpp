@@ -6,6 +6,8 @@ using namespace std;
 
 class DriversManager {
 public:
+  bool isReady = false;
+
   void add(BaseDriver *driver);
 
   BaseDriver *get(string id);
