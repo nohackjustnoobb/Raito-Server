@@ -1,10 +1,10 @@
 [requires]
-crowcpp-crow/1.0+5
+crowcpp-crow/1.1.0
 nlohmann_json/3.11.3
-re2/20230901
-fmt/10.2.0
-openssl/3.2.0
-cpr/1.10.4
+re2/20231101
+fmt/10.2.1
+openssl/3.2.1
+cpr/1.10.5
 
 # dependencies for DM5 
 lexbor/2.3.0

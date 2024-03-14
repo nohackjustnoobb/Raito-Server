@@ -126,24 +126,25 @@ void ImagesManager::setInterval(string interval) {
 void ImagesManager::cleaner() {
   string path = "../image";
 
-  function<void(fs::path)> processFile = [](const fs::path &filePath) {
-    std::ifstream inFile(filePath);
-    if (inFile.is_open()) {
-      std::string url;
-      std::getline(inFile, url);
-      inFile.close();
+  function<void(filesystem::path)> processFile =
+      [](const filesystem::path &filePath) {
+        ifstream inFile(filePath);
+        if (inFile.is_open()) {
+          string url;
+          getline(inFile, url);
+          inFile.close();
 
-      std::ofstream outFile(filePath, std::ios::trunc);
-      if (outFile.is_open()) {
-        outFile << url << endl;
-        outFile.close();
-      }
-    }
-  };
+          ofstream outFile(filePath, ios::trunc);
+          if (outFile.is_open()) {
+            outFile << url << endl;
+            outFile.close();
+          }
+        }
+      };
 
-  function<void(fs::path)> processDirectory =
-      [&processDirectory, &processFile](const fs::path &dirPath) {
-        for (const auto &entry : fs::directory_iterator(dirPath)) {
+  function<void(filesystem::path)> processDirectory =
+      [&processDirectory, &processFile](const filesystem::path &dirPath) {
+        for (const auto &entry : filesystem::directory_iterator(dirPath)) {
           if (entry.is_directory())
             processDirectory(entry.path());
           else if (entry.is_regular_file())
@@ -153,7 +154,7 @@ void ImagesManager::cleaner() {
 
   while (true) {
     CROW_LOG_INFO << "Clearing Image Cache";
-    if (fs::exists(path) && fs::is_directory(path))
+    if (filesystem::exists(path) && filesystem::is_directory(path))
       processDirectory(path);
 
     this_thread::sleep_for(chrono::minutes(*this->interval));
