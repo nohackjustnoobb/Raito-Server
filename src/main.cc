@@ -20,7 +20,7 @@
 #include <thread>
 
 #define CROW_MAIN
-#define RAITO_SERVER_VERSION "0.1.0-beta.6"
+#define RAITO_SERVER_VERSION "0.1.0-beta.7"
 
 #define GET_DRIVER()                                                           \
   char *driverId = req.url_params.get("driver");                               \
@@ -446,6 +446,10 @@ int main() {
   if (config.contains("imageProxy"))
     imagesManager.setProxy(config["imageProxy"].get<string>());
 
+  // set interval
+  if (config.contains("clearCache"))
+    imagesManager.setInterval(config["clearCache"].get<string>());
+
   // TODO You can add your own drivers here:
   BaseDriver *drivers[] = {
       new MHR(),
@@ -453,6 +457,7 @@ int main() {
       new ActiveAdapter(new MHG()),
   };
 
+  // register drivers
   if (config.contains("includeDrivers")) {
     vector<string> includeDrivers =
         config["includeDrivers"].get<vector<string>>();
@@ -481,9 +486,8 @@ int main() {
   app.loglevel(crow::LogLevel::INFO);
 
   if (config.contains("accessKey") && !config["accessKey"].is_null() &&
-      config["accessKey"].get<string>() != "") {
+      config["accessKey"].get<string>() != "")
     accessKey = new string(config["accessKey"].get<string>());
-  }
 
   CROW_ROUTE(app, "/")(getServerInfo);
   CROW_ROUTE(app, "/driver")(getDriverInfo);

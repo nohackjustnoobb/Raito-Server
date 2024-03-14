@@ -23,9 +23,9 @@ MHR::MHR() {
   version = "0.1.0-beta.1";
 
   supportSuggestion = true;
-  for (const auto &pair : categoryId) {
+  for (const auto &pair : categoryId)
     supportedCategories.push_back(pair.first);
-  }
+
   proxyHeaders = {{"referer", "http://www.dm5.com/dm5api/"}};
 }
 

@@ -24,9 +24,8 @@ DM5::DM5() {
 
   supportSuggestion = true;
   recommendedChunkSize = 10;
-  for (const auto &pair : categoryId) {
+  for (const auto &pair : categoryId)
     supportedCategories.push_back(pair.first);
-  }
 
   proxyHeaders = {{"referer", "http://www.dm5.com/dm5api/"}};
 }

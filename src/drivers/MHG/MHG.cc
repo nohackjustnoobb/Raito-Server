@@ -26,9 +26,8 @@ MHG::MHG() {
   recommendedChunkSize = 5;
   timeout = 10;
 
-  for (const auto &pair : categoryText) {
+  for (const auto &pair : categoryText)
     supportedCategories.push_back(pair.first);
-  }
 
   proxyHeaders = {{"referer", "https://tw.manhuagui.com"}};
 }

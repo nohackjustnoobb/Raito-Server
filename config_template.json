@@ -16,5 +16,8 @@
     // Optional, only active drivers will use the proxy
     "proxies": [],
     // Optional, proxy that only used when fetching images
-    "imageProxy": "sock5://example.com"
+    "imageProxy": "sock5://example.com",
+    // Optional, set the interval for clearing image cache
+    // Valid units: "m"(minutes), "h"(hours), "d"(days)
+    "clearCache": "1d"
 }

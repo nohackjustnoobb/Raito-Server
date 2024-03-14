@@ -15,6 +15,10 @@ public:
 
   void setProxy(string proxy);
 
+  void setInterval(string interval);
+
+  void cleaner();
+
   string getPath(string id, string genre, string dest);
 
   vector<string> getImage(string id, string genre, string hash, bool asBase64);
@@ -23,6 +27,7 @@ private:
   map<string, cpr::Header> settings;
   string *proxy;
   string url;
+  int *interval;
 };
 
 extern ImagesManager imagesManager;
