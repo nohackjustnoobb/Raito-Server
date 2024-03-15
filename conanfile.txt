@@ -1,5 +1,5 @@
 [requires]
-crowcpp-crow/1.1.0
+crowcpp-crow/1.0+5
 nlohmann_json/3.11.3
 re2/20231101
 fmt/10.2.1

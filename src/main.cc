@@ -1,4 +1,5 @@
 #include "crow.h"
+#include "crow/middlewares/cors.h"
 #include "manager/DriversManager.hpp"
 #include "manager/ImagesManager.hpp"
 #include "utils/utils.hpp"
@@ -20,7 +21,7 @@
 #include <thread>
 
 #define CROW_MAIN
-#define RAITO_SERVER_VERSION "0.1.0-beta.8"
+#define RAITO_SERVER_VERSION "0.1.0-beta.9"
 
 #define GET_DRIVER()                                                           \
   char *driverId = req.url_params.get("driver");                               \
@@ -319,7 +320,7 @@ crow::response getImage(const crow::request &req, string id, string genre,
     vector<string> result = imagesManager.getImage(id, genre, hash, useBase64);
 
     crow::response resp = crow::response(result.at(0), result.at(1));
-    resp.add_header("Cache-Control", "max-age=31536000");
+    resp.add_header("Cache-Control", "max-age=43200");
 
     return resp;
   } catch (...) {
@@ -388,7 +389,6 @@ struct AccessGuard {
         !(req.method == crow::HTTPMethod::OPTIONS ||
           req.get_header_value("Access-Key") == *accessKey ||
           (RE2::FullMatch(req.raw_url, R"(^\/(image|share).*$)")))) {
-
       res.write(R"({"error":"\"Access-Key\" is not found or matched."})");
       res.add_header("Content-Type", "application/json");
       res.code = 403;
@@ -398,9 +398,6 @@ struct AccessGuard {
 
   void after_handle(crow::request & /*req*/, crow::response &res,
                     context & /*ctx*/) {
-    res.add_header("Access-Control-Allow-Origin", "*");
-    res.add_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-    res.add_header("Access-Control-Allow-Headers", "Access-Key, Content-Type");
     res.add_header("Access-Control-Expose-Headers", "Is-Next");
   }
 };
@@ -482,8 +479,13 @@ int main() {
   driversManager.isReady = true;
 
   // server initialization
-  crow::App<AccessGuard> app;
+  crow::App<AccessGuard, crow::CORSHandler> app;
   app.loglevel(crow::LogLevel::INFO);
+
+  // CORS
+  auto &cors = app.get_middleware<crow::CORSHandler>();
+  cors.global().methods(crow::HTTPMethod::GET, crow::HTTPMethod::POST,
+                        crow::HTTPMethod::OPTIONS);
 
   if (config.contains("accessKey") && !config["accessKey"].is_null() &&
       config["accessKey"].get<string>() != "")
