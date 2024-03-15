@@ -20,7 +20,7 @@ using namespace MHG_utils;
 
 MHG::MHG() {
   id = "MHG";
-  version = "0.1.0-beta.3";
+  version = "0.1.0-beta.4";
 
   supportSuggestion = false;
   recommendedChunkSize = 5;
@@ -293,16 +293,14 @@ Manga *MHG::extractDetails(Node *node, const string &id,
 
   vector<Node *> chaptersNode;
   Node *tryAdult = node->tryFind("#__VIEWSTATE");
+  Node *hiddenElem;
 
   if (tryAdult == nullptr) {
     chaptersNode = node->findAll("div.chapter-list");
   } else {
-    string encodedElements = tryAdult->getAttribute("value");
-    Node *hiddenElem = new Node(convert.to_bytes(
-        lzstring::decompressFromBase64(convert.from_bytes(encodedElements))));
+    hiddenElem = new Node(convert.to_bytes(lzstring::decompressFromBase64(
+        convert.from_bytes(tryAdult->getAttribute("value")))));
     chaptersNode = hiddenElem->findAll("div.chapter-list");
-    delete hiddenElem;
-    delete tryAdult;
   }
 
   if (chaptersNode.size() >= 1)
@@ -313,6 +311,10 @@ Manga *MHG::extractDetails(Node *node, const string &id,
       pushChapters(chaptersNode.at(i), extra);
 
   releaseMemory(chaptersNode);
+  if (tryAdult != nullptr) {
+    delete hiddenElem;
+    delete tryAdult;
+  }
 
   return new DetailsManga(this, id, title, thumbnail, latest, authors, isEnded,
                           description, categories, {serial, extra, id});
