@@ -52,7 +52,7 @@ vector<string> ImagesManager::getImage(string id, string genre, string hash,
 
   // get the format of the image
   string type;
-  RE2::PartialMatch(url, R"(\.(jpg|jpeg|png|gif|bmp|tiff|webp))", &type);
+  RE2::PartialMatch(url, R"(.*\.(jpg|jpeg|png|gif|bmp|tiff|webp))", &type);
 
   if (!crow::mime_types.contains(type))
     throw "Image format not supported";

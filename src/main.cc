@@ -21,7 +21,7 @@
 #include <thread>
 
 #define CROW_MAIN
-#define RAITO_SERVER_VERSION "0.1.0-beta.9"
+#define RAITO_SERVER_VERSION "0.1.0-beta.10"
 
 #define GET_DRIVER()                                                           \
   char *driverId = req.url_params.get("driver");                               \
@@ -320,7 +320,10 @@ crow::response getImage(const crow::request &req, string id, string genre,
     vector<string> result = imagesManager.getImage(id, genre, hash, useBase64);
 
     crow::response resp = crow::response(result.at(0), result.at(1));
-    resp.add_header("Cache-Control", "max-age=43200");
+    string cacheControl = req.get_header_value("Cache-Control");
+
+    resp.add_header("Cache-Control",
+                    cacheControl != "" ? cacheControl : "max-age=43200");
 
     return resp;
   } catch (...) {
