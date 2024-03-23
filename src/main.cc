@@ -11,6 +11,7 @@
 #include "drivers/MHR/MHR.hpp"
 #include "utils/converter.hpp"
 
+#include <FreeImage.h>
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -21,7 +22,7 @@
 #include <thread>
 
 #define CROW_MAIN
-#define RAITO_SERVER_VERSION "0.1.0-beta.10"
+#define RAITO_SERVER_VERSION "0.1.0-beta.11"
 
 #define GET_DRIVER()                                                           \
   char *driverId = req.url_params.get("driver");                               \
@@ -484,6 +485,7 @@ int main() {
   // server initialization
   crow::App<AccessGuard, crow::CORSHandler> app;
   app.loglevel(crow::LogLevel::INFO);
+  FreeImage_Initialise();
 
   // CORS
   auto &cors = app.get_middleware<crow::CORSHandler>();
@@ -509,6 +511,7 @@ int main() {
   CROW_ROUTE(app, "/share")(getShare);
 
   app.port(8000).multithreaded().run();
+  FreeImage_DeInitialise();
 
   return 0;
 }

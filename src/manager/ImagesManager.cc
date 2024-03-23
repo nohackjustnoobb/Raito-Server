@@ -2,6 +2,7 @@
 #include "../utils/utils.hpp"
 
 #include "crow.h"
+#include <FreeImage.h>
 #include <chrono>
 #include <filesystem>
 #include <fmt/core.h>
@@ -9,6 +10,9 @@
 #include <fstream>
 #include <re2/re2.h>
 #include <thread>
+
+#define SAVE_FORMAT "webp"
+#define FIF_FORMAT FIF_WEBP
 
 void ImagesManager::add(string id, cpr::Header headers) {
   settings[id] = headers;
@@ -26,10 +30,10 @@ string ImagesManager::getPath(string id, string genre, string dest) {
 
   string hash = md5(removeHost);
 
-  string path = fmt::format("../image/{}/{}/{}", id, genre, hash);
+  string path = fmt::format("../image/{}/{}/{}.src", id, genre, hash);
   if (!filesystem::exists(path)) {
     std::ofstream ofs(path);
-    ofs << dest << endl;
+    ofs << dest;
     ofs.close();
   }
 
@@ -38,40 +42,35 @@ string ImagesManager::getPath(string id, string genre, string dest) {
 
 vector<string> ImagesManager::getImage(string id, string genre, string hash,
                                        bool useBase64) {
-  string path = fmt::format("../image/{}/{}/{}", id, genre, hash);
+  string path = fmt::format("../image/{}/{}/{}.src", id, genre, hash);
   if (!filesystem::exists(path))
     throw "Image cannot be found";
 
+  // check the cache
+  string imagePath =
+      fmt::format("../image/{}/{}/{}.{}", id, genre, hash, SAVE_FORMAT);
+  if (filesystem::exists(imagePath)) {
+    std::ifstream imageFile(imagePath, std::ios::binary);
+
+    std::ostringstream oss;
+    oss << imageFile.rdbuf();
+    imageFile.close();
+    string imageData = oss.str();
+
+    if (useBase64)
+      return {"txt",
+              fmt::format(
+                  "data:{};base64, {}", crow::mime_types.at(SAVE_FORMAT),
+                  crow::utility::base64encode(imageData, imageData.size()))};
+
+    return {SAVE_FORMAT, imageData};
+  }
+
   std::ifstream ifs(path);
-
-  if (!ifs.good())
-    throw "Image cannot be read";
-
   string url;
   getline(ifs, url);
 
-  // get the format of the image
-  string type;
-  RE2::PartialMatch(url, R"(.*\.(jpg|jpeg|png|gif|bmp|tiff|webp))", &type);
-
-  if (!crow::mime_types.contains(type))
-    throw "Image format not supported";
-
-  // check if cached
-  string img;
-  if (getline(ifs, img)) {
-    ifs.close();
-
-    if (useBase64)
-      return {"txt", fmt::format("data:{};base64, {}",
-                                 crow::mime_types.at(type), img)};
-
-    return {type, crow::utility::base64decode(img, img.size())};
-  }
-
-  ifs.close();
-
-  // if not cached, fetch the image
+  // fetch the image
   cpr::Response r;
   if (this->proxy != nullptr)
     r = cpr::Get(cpr::Url(url), settings[id], cpr::Timeout{5000},
@@ -79,21 +78,31 @@ vector<string> ImagesManager::getImage(string id, string genre, string hash,
   else
     r = cpr::Get(cpr::Url(url), settings[id], cpr::Timeout{5000});
 
+  if (r.status_code >= 300 || r.status_code < 200)
+    throw "Error fetching image";
+
   if (r.status_code == 0)
     throw "Request timeout";
 
-  string encoded = crow::utility::base64encode(r.text, r.text.size());
+  // load the image
+  FIMEMORY *hmem = FreeImage_OpenMemory((BYTE *)&r.text[0], r.text.length());
+  FREE_IMAGE_FORMAT fif = FreeImage_GetFileTypeFromMemory(hmem, 0);
+  FIBITMAP *dib = FreeImage_LoadFromMemory(fif, hmem);
+
+  // check if the image was loaded successfully
+  if (dib == nullptr)
+    throw "Failed to load image";
 
   // cache the image
-  std::ofstream ofs(path, std::ios_base::app);
-  ofs << encoded;
-  ofs.close();
+  FIBITMAP *converted_dib = FreeImage_ConvertTo24Bits(dib);
+  if (!FreeImage_Save(FIF_FORMAT, converted_dib, imagePath.c_str()))
+    throw "Failed to save image";
 
-  if (useBase64)
-    return {"txt", fmt::format("data:{};base64, {}", crow::mime_types.at(type),
-                               encoded)};
+  FreeImage_Unload(converted_dib);
+  FreeImage_Unload(dib);
+  FreeImage_CloseMemory(hmem);
 
-  return {type, r.text};
+  return this->getImage(id, genre, hash, useBase64);
 }
 
 void ImagesManager::setInterval(string interval) {
@@ -128,18 +137,8 @@ void ImagesManager::cleaner() {
 
   function<void(filesystem::path)> processFile =
       [](const filesystem::path &filePath) {
-        ifstream inFile(filePath);
-        if (inFile.is_open()) {
-          string url;
-          getline(inFile, url);
-          inFile.close();
-
-          ofstream outFile(filePath, ios::trunc);
-          if (outFile.is_open()) {
-            outFile << url << endl;
-            outFile.close();
-          }
-        }
+        if (filePath.extension() != ".src")
+          filesystem::remove(filePath);
       };
 
   function<void(filesystem::path)> processDirectory =

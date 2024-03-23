@@ -18,6 +18,7 @@ find_package(OpenSSL REQUIRED)
 find_package(fmt REQUIRED CONFIG)
 find_package(cpr CONFIG REQUIRED)
 find_package(re2 REQUIRED)
+find_package(freeimage REQUIRED)
 
 # dependencies for DM5
 find_package(lexbor REQUIRED)
@@ -32,6 +33,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     OpenSSL::Crypto OpenSSL::SSL
     fmt::fmt
     cpr::cpr
+    freeimage::freeimage
 
     # dependencies for DM5
     lexbor::lexbor_static

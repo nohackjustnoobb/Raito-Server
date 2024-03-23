@@ -5,6 +5,7 @@ re2/20231101
 fmt/10.2.1
 openssl/3.2.1
 cpr/1.10.5
+freeimage/3.18.0
 
 # dependencies for DM5 
 lexbor/2.3.0
