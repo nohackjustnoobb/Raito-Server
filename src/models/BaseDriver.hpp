@@ -12,7 +12,7 @@ using namespace std;
 
 class BaseDriver {
 public:
-  string id;
+  string id; // Can't contain "'" otherwise the sql query cannot be parsed
   string version;
   int recommendedChunkSize = 0;
   bool supportSuggestion;

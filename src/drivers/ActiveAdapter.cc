@@ -132,11 +132,14 @@ public:
     if (query.getColumn(5).isNull()) {
       vector<string> result = driver->getChapter(id, extraData, proxy);
 
-      db->exec(fmt::format("UPDATE CHAPTER SET URLS = '{}' WHERE ID = '{}' AND "
-                           "CHAPTERS_ID = '{}' AND IS_EXTRA = {}",
-                           fmt::join(result, "|"), id,
-                           query.getColumn(0).getString(),
-                           query.getColumn(4).getString()));
+      SQLite::Statement updateQuery(*db,
+                                    "UPDATE CHAPTER SET URLS = ? WHERE ID = ? "
+                                    "AND CHAPTERS_ID = ? AND IS_EXTRA = ?");
+      updateQuery.bind(1, fmt::format("{}", fmt::join(result, "|")));
+      updateQuery.bind(2, id);
+      updateQuery.bind(3, query.getColumn(0).getString());
+      updateQuery.bind(4, query.getColumn(4).getString());
+      updateQuery.exec();
 
       return result;
     } else {
@@ -154,6 +157,7 @@ public:
 
     SQLite::Statement query(*db, queryString);
     query.bind(1, (page - 1) * 50);
+
     vector<Manga *> result;
     while (query.executeStep())
       result.push_back(toManga(query));
@@ -313,21 +317,32 @@ private:
               categories << "|";
           }
 
-          // update the manga info
-          db->exec(fmt::format(
-              "REPLACE INTO MANGA (ID, THUMBNAIL, TITLE, DESCRIPTION, "
-              "IS_END, AUTHORS, CATEGORIES, LATEST, UPDATE_TIME) "
-              "VALUES ('{}', '{}', '{}', '{}', {}, '{}', '{}', '{}', {})",
-              manga->id, manga->thumbnail, manga->title, manga->description,
-              (int)manga->isEnded, fmt::join(manga->authors, "|"),
-              categories.str(), manga->latest,
-              chrono::duration_cast<chrono::seconds>(
-                  chrono::system_clock::now().time_since_epoch())
-                  .count()));
+          SQLite::Transaction transaction(*db);
 
-          db->exec(fmt::format("REPLACE INTO CHAPTERS (MANGA_ID, "
-                               "EXTRA_DATA) VALUES ('{}', '{}')",
-                               manga->id, manga->chapters.extraData));
+          // update the manga info
+          SQLite::Statement query(
+              *db, "REPLACE INTO MANGA (ID, THUMBNAIL, TITLE, DESCRIPTION, "
+                   "IS_END, AUTHORS, CATEGORIES, LATEST, UPDATE_TIME) VALUES "
+                   "(?, ?, ?, ?, ?, ?, ?, ?, ?)");
+          query.bind(1, manga->id);
+          query.bind(2, manga->thumbnail);
+          query.bind(3, manga->title);
+          query.bind(4, manga->description);
+          query.bind(5, (int)manga->isEnded);
+          query.bind(6, fmt::format("{}", fmt::join(manga->authors, "|")));
+          query.bind(7, categories.str());
+          query.bind(8, manga->latest);
+          query.bind(9, chrono::duration_cast<chrono::seconds>(
+                            chrono::system_clock::now().time_since_epoch())
+                            .count());
+          query.exec();
+
+          query = SQLite::Statement(
+              *db,
+              "REPLACE INTO CHAPTERS (MANGA_ID, EXTRA_DATA) VALUES (?, ?)");
+          query.bind(1, manga->id);
+          query.bind(2, manga->chapters.extraData);
+          query.exec();
 
           auto updateChapter = [&](vector<Chapter> chapters, bool isExtra) {
             ostringstream oss;
@@ -342,9 +357,13 @@ private:
             oss << "'";
 
             // remove the deleted chapter
-            db->exec(fmt::format("DELETE FROM CHAPTER WHERE CHAPTERS_ID = '{}' "
-                                 "AND IS_EXTRA = {} AND ID NOT IN ({})",
-                                 manga->id, (int)isExtra, oss.str()));
+            query = SQLite::Statement(
+                *db, fmt::format("DELETE FROM CHAPTER WHERE CHAPTERS_ID = ? "
+                                 "AND IS_EXTRA = ? AND ID NOT IN ({})",
+                                 oss.str()));
+            query.bind(1, manga->id);
+            query.bind(2, (int)isExtra);
+            query.exec();
 
             // insert only the new one
             SQLite::Statement query(*db, "SELECT ID FROM CHAPTER WHERE "
@@ -357,16 +376,22 @@ private:
 
             for (const auto &pair : chaptersMap) {
               Chapter chapter = chapters[pair.second];
-              db->exec(fmt::format(
-                  "REPLACE INTO CHAPTER (CHAPTERS_ID, ID, IDX, TITLE, "
-                  "IS_EXTRA) VALUES ('{}', '{}', {}, '{}', {})",
-                  manga->id, chapter.id, chapters.size() - pair.second - 1,
-                  chapter.title, (int)isExtra));
+              query = SQLite::Statement(
+                  *db, "REPLACE INTO CHAPTER (CHAPTERS_ID, ID, IDX, TITLE, "
+                       "IS_EXTRA) VALUES (?, ?, ?, ?, ?)");
+              query.bind(1, manga->id);
+              query.bind(2, chapter.id);
+              query.bind(3, (int)(chapters.size() - pair.second - 1));
+              query.bind(4, chapter.title);
+              query.bind(5, (int)isExtra);
+              query.exec();
             }
           };
 
           updateChapter(manga->chapters.serial, false);
           updateChapter(manga->chapters.extra, true);
+
+          transaction.commit();
         } catch (...) {
           CROW_LOG_INFO << fmt::format(
               "ActiveDriver - {}: failed to getting {}", this->id, id);
