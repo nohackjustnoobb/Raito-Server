@@ -6,13 +6,16 @@ fmt/10.2.1
 openssl/3.2.1
 cpr/1.10.5
 freeimage/3.18.0
-
-# dependencies for DM5 
-lexbor/2.3.0
-
-# dependencies for MHG
 sqlitecpp/3.3.1
+
+# dependencies for DM5 and MHG
+lexbor/2.3.0
 
 [generators]
 CMakeDeps
 CMakeToolchain
+
+[options]
+freeimage/*:with_tiff=False
+freeimage/*:with_eigen=False
+freeimage/*:with_openexr=False
