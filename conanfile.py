@@ -11,6 +11,7 @@ class RaitoServer(ConanFile):
         "cpr/1.10.5",
         "freeimage/3.18.0",
         "sqlitecpp/3.3.1",
+        "lexbor/2.3.0",
     ]
     settings = "os", "compiler", "build_type", "arch"
     generators = "CMakeDeps", "CMakeToolchain"
