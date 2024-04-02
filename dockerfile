@@ -1,7 +1,7 @@
 FROM python:3.9 as builder
 
 WORKDIR /app
-COPY conanfile.txt CMakeLists.txt ./
+COPY conanfile.py CMakeLists.txt ./
 COPY src src/
 
 RUN pip install conan
