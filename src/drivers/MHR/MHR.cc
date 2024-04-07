@@ -21,7 +21,7 @@ using namespace MHR_utils;
 
 MHR::MHR() {
   id = "MHR";
-  version = "0.1.0-beta.2";
+  version = "0.1.0-beta.3";
 
   supportSuggestion = true;
   for (const auto &pair : categoryId)
@@ -306,6 +306,7 @@ Manga *MHR::convertDetails(const json &data) {
                  RE2(R"(^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$)"),
                  &year, &month, &day, &hour, &minute, &second);
   tm tm{second, minute, hour, day, month - 1, year - 1900};
+  tm.tm_isdst = -1;
 
   int *updateTime = new int(mktime(&tm));
 
