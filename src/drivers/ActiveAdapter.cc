@@ -222,13 +222,14 @@ private:
       vector<Category> categories;
       for (string category : categoriesString)
         categories.push_back(stringToCategory(category));
+      int *updateTime = new int(query.getColumn(8).getInt());
 
       return new DetailsManga(
           this, query.getColumn(0).getString(), query.getColumn(2).getString(),
           query.getColumn(1).getString(), query.getColumn(7).getString(),
           split(query.getColumn(5).getString(), R"(\|)"),
           query.getColumn(4).getInt() == 1, query.getColumn(3).getString(),
-          categories, {{}, {}, query.getColumn(10).getString()});
+          categories, {{}, {}, query.getColumn(10).getString()}, updateTime);
     } else {
       return new Manga(
           this, query.getColumn(0).getString(), query.getColumn(2).getString(),
@@ -286,8 +287,9 @@ private:
           id = query.getColumn(0).getString();
 
           // check if updated and not in the waiting list
-          if (query.getColumn(7).getString().find(latestMap[id]) ==
-                  string::npos &&
+
+          if (!this->driver->isLatestEqual(query.getColumn(7).getString(),
+                                           latestMap[id]) &&
               find(waitingList.begin(), waitingList.end(), id) ==
                   waitingList.end())
             waitingList.insert(waitingList.begin(), id);

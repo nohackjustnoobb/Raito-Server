@@ -20,7 +20,7 @@ using namespace MHG_utils;
 
 MHG::MHG() {
   id = "MHG";
-  version = "0.1.0-beta.4";
+  version = "0.1.0-beta.5";
 
   supportSuggestion = false;
   recommendedChunkSize = 5;
@@ -201,6 +201,17 @@ vector<PreviewManga> MHG::getUpdates(string proxy) {
   delete body;
 
   return result;
+}
+
+bool MHG::isLatestEqual(string value1, string value2) {
+  // create a new copy
+  string normalizedValue1 = string(value1);
+  string normalizedValue2 = string(value1);
+
+  RE2::GlobalReplace(&normalizedValue1, RE2("第"), "");
+  RE2::GlobalReplace(&normalizedValue2, RE2("第"), "");
+
+  return ActiveDriver::isLatestEqual(normalizedValue1, normalizedValue2);
 }
 
 bool MHG::checkOnline() {

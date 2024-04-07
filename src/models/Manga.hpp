@@ -71,14 +71,16 @@ public:
   vector<Category> categories;
   Chapters chapters;
   vector<string> authors;
+  int *updateTime;
 
   DetailsManga(BaseDriver *driver, const string &id, const string &title,
                const string &thumbnail, const string &latest,
                const vector<string> &authors, const bool &isEnded,
                const string &description, const vector<Category> &categories,
-               const Chapters &chapters)
+               const Chapters &chapters, int *updateTime = nullptr)
       : Manga(driver, id, title, thumbnail, latest, isEnded), authors(authors),
-        description(description), categories(categories), chapters(chapters) {}
+        description(description), categories(categories), chapters(chapters),
+        updateTime(updateTime) {}
 
   json toJson() override {
     json result;
@@ -98,6 +100,11 @@ public:
       categoriesString.push_back(categoryToString(category));
 
     result["categories"] = categoriesString;
+
+    if (updateTime != nullptr)
+      result["updateTime"] = *updateTime;
+    else
+      result["updateTime"] = nullptr;
 
     return result;
   }

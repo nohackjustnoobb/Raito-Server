@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <codecvt>
 
+#include <ctime>
 #include <mutex>
 #include <nlohmann/json.hpp>
 #include <thread>
@@ -20,7 +21,7 @@ using namespace MHR_utils;
 
 MHR::MHR() {
   id = "MHR";
-  version = "0.1.0-beta.1";
+  version = "0.1.0-beta.2";
 
   supportSuggestion = true;
   for (const auto &pair : categoryId)
@@ -300,6 +301,14 @@ Manga *MHR::convert(const json &data) {
 }
 
 Manga *MHR::convertDetails(const json &data) {
+  int year, month, day, hour, minute, second;
+  RE2::FullMatch(data["mangaNewestTime"].get<string>(),
+                 RE2(R"(^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$)"),
+                 &year, &month, &day, &hour, &minute, &second);
+  tm tm{second, minute, hour, day, month - 1, year - 1900};
+
+  int *updateTime = new int(mktime(&tm));
+
   vector<Chapter> serial;
   vector<Chapter> extra;
   string id = to_string(data["mangaId"].get<int>());
@@ -330,7 +339,7 @@ Manga *MHR::convertDetails(const json &data) {
       data["mangaNewsectionName"].get<string>(),
       data["mangaAuthors"].get<vector<string>>(),
       data["mangaIsOver"].get<int>() == 1, data["mangaIntro"].get<string>(),
-      categories, {serial, extra, id});
+      categories, {serial, extra, id}, updateTime);
 }
 
 string MHR::extractThumbnail(const string &url) {

@@ -16,6 +16,11 @@ public:
   virtual vector<string> getChapter(string id, string extraData,
                                     string proxy) = 0;
 
+  virtual bool isLatestEqual(string value1, string value2) {
+    return value1.find(value2) != string::npos ||
+           value2.find(value1) != string::npos;
+  }
+
   vector<Manga *> getManga(vector<string> ids, bool showDetails) override {
     return this->getManga(ids, showDetails, "");
   };

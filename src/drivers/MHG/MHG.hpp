@@ -22,6 +22,8 @@ public:
 
   vector<PreviewManga> getUpdates(string proxy = "") override;
 
+  bool isLatestEqual(string value1, string value2) override;
+
   bool checkOnline() override;
 
 private:
