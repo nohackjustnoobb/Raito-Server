@@ -20,4 +20,3 @@ class RaitoServer(ConanFile):
         self.options["libtiff"].lzma = False
         self.options["freeimage"].with_jxr = False
         self.options["freeimage"].with_eigen = False
-        self.options["freeimage"].with_openexr = False
