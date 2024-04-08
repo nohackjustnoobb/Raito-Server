@@ -7,7 +7,7 @@ class RaitoServer(ConanFile):
         "nlohmann_json/3.11.3",
         "re2/20231101",
         "fmt/10.2.1",
-        "openssl/3.2.1",
+        "hash-library/8.0",
         "cpr/1.10.5",
         "freeimage/3.18.0",
         "sqlitecpp/3.3.1",
@@ -18,3 +18,6 @@ class RaitoServer(ConanFile):
 
     def configure(self):
         self.options["libtiff"].lzma = False
+        self.options["freeimage"].with_jxr = False
+        self.options["freeimage"].with_eigen = False
+        self.options["freeimage"].with_openexr = False

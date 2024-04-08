@@ -2,6 +2,7 @@
 #include "../utils/utils.hpp"
 
 #include "crow.h"
+#include "md5.h"
 #include <FreeImage.h>
 #include <chrono>
 #include <filesystem>
@@ -28,7 +29,7 @@ string ImagesManager::getPath(string id, string genre, string dest) {
   string removeHost = dest;
   RE2::GlobalReplace(&removeHost, R"(https?:\/\/([^\/]+))", "");
 
-  string hash = md5(removeHost);
+  string hash = MD5()(removeHost);
 
   string path = fmt::format("../image/{}/{}/{}.src", id, genre, hash);
   if (!filesystem::exists(path)) {

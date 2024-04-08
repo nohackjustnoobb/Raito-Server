@@ -14,7 +14,7 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
 find_package(Crow REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
-find_package(OpenSSL REQUIRED)
+find_package(hash-library REQUIRED)
 find_package(fmt REQUIRED CONFIG)
 find_package(cpr CONFIG REQUIRED)
 find_package(re2 REQUIRED)
@@ -30,7 +30,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     nlohmann_json::nlohmann_json
     Crow::Crow
     re2::re2
-    OpenSSL::Crypto OpenSSL::SSL
+    hash-library::hash-library
     fmt::fmt
     cpr::cpr
     freeimage::freeimage

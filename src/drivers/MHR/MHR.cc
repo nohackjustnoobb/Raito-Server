@@ -3,9 +3,9 @@
 #include "../../models/Manga.hpp"
 #include "utils.cc"
 
+#include "md5.h"
 #include <algorithm>
 #include <codecvt>
-
 #include <ctime>
 #include <mutex>
 #include <nlohmann/json.hpp>
@@ -21,7 +21,7 @@ using namespace MHR_utils;
 
 MHR::MHR() {
   id = "MHR";
-  version = "0.1.0-beta.3";
+  version = "0.1.0-beta.4";
 
   supportSuggestion = true;
   for (const auto &pair : categoryId)
@@ -242,7 +242,7 @@ string MHR::hash(vector<string> &list) {
 
   result = MHR_utils::urlEncode(result);
 
-  return md5(result);
+  return MD5()(result);
 }
 
 string MHR::hash(map<string, string> query) {
@@ -305,10 +305,12 @@ Manga *MHR::convertDetails(const json &data) {
   RE2::FullMatch(data["mangaNewestTime"].get<string>(),
                  RE2(R"(^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$)"),
                  &year, &month, &day, &hour, &minute, &second);
-  tm tm{second, minute, hour, day, month - 1, year - 1900};
-  tm.tm_isdst = -1;
+  tm time{second, minute, hour, day, month - 1, year - 1900};
 
-  int *updateTime = new int(mktime(&tm));
+  tm tz{0, 0, 0, 1, 0, 70};
+  int currentOffset = mktime(&tz);
+
+  int *updateTime = new int(mktime(&time) - currentOffset - 28800);
 
   vector<Chapter> serial;
   vector<Chapter> extra;

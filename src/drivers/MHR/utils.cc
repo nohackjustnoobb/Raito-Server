@@ -1,7 +1,5 @@
 #include <cpr/cpr.h>
 #include <iomanip>
-#include <openssl/evp.h>
-#include <openssl/rand.h>
 #include <re2/re2.h>
 #include <sstream>
 #include <string>
@@ -60,25 +58,4 @@ static vector<string> split(string s, RE2 r) {
   return splits;
 }
 
-static string md5(const string &text) {
-
-  unsigned char hash[EVP_MAX_MD_SIZE];
-  unsigned int hashLength;
-
-  EVP_MD_CTX *md5ctx;
-  const EVP_MD *md5 = EVP_md5();
-
-  md5ctx = EVP_MD_CTX_new();
-  EVP_DigestInit_ex(md5ctx, md5, NULL);
-  EVP_DigestUpdate(md5ctx, text.c_str(), text.size());
-  EVP_DigestFinal_ex(md5ctx, hash, &hashLength);
-  EVP_MD_CTX_free(md5ctx);
-
-  stringstream ss;
-
-  for (int i = 0; i < hashLength; i++) {
-    ss << hex << setw(2) << setfill('0') << static_cast<int>(hash[i]);
-  }
-  return ss.str();
-}
 } // namespace MHR_utils
