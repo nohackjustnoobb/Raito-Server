@@ -12,10 +12,12 @@ public:
 
   BaseDriver *get(string id);
 
+  BaseDriver *operator[](string id);
+
   vector<BaseDriver *> getAll();
 
 private:
-  map<string, BaseDriver *> drivers;
+  vector<BaseDriver *> drivers;
 };
 
 extern DriversManager driversManager;

@@ -3,26 +3,19 @@
 
 #include <algorithm>
 
-void DriversManager::add(BaseDriver *driver) {
-  drivers[driver->id] = driver;
-  imagesManager.add(driver->id, driver->proxyHeaders);
-}
+void DriversManager::add(BaseDriver *driver) { drivers.push_back(driver); }
 
 BaseDriver *DriversManager::get(string id) {
-  // the id should not be case sensitive
-  transform(id.begin(), id.end(), id.begin(),
-            [](unsigned char c) { return toupper(c); });
+  for (const auto &driver : drivers) {
+    if (driver->id == id)
+      return driver;
+  }
 
-  return drivers.find(id) == drivers.end() ? nullptr : drivers[id];
+  return nullptr;
 }
 
-vector<BaseDriver *> DriversManager::getAll() {
-  vector<BaseDriver *> result;
+BaseDriver *DriversManager::operator[](string id) { return get(id); }
 
-  for (const auto &pair : drivers)
-    result.push_back(pair.second);
-
-  return result;
-}
+vector<BaseDriver *> DriversManager::getAll() { return drivers; }
 
 DriversManager driversManager;
