@@ -2,6 +2,13 @@
     // Required, the base url to this server
     // It is essential to have "/" at the end
     "baseUrl": "http://example.com/",
+    // Optional, the framework used for building the http server
+    // Available options: "crow", "drogon"
+    // Default: "crow"
+    "framework": "crow",
+    // Optional, the port to listen on
+    // Default: 8000
+    "port": 8000,
     // Optional, the base url to the frontend webpage
     // It is essential to have "/" at the end
     // If not provided, some features will be disabled

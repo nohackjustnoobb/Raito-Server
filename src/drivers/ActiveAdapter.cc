@@ -260,12 +260,11 @@ private:
       if (counter >= 300) {
         vector<PreviewManga> manga;
         try {
-          CROW_LOG_INFO << fmt::format("ActiveDriver - {}: getting updates",
-                                       this->id);
+          log(fmt::format("ActiveDriver - {}", this->id), "Getting Updates");
           manga = driver->getUpdates(proxy);
         } catch (...) {
-          CROW_LOG_INFO << fmt::format(
-              "ActiveDriver - {}: failed to get updates", this->id);
+          log(fmt::format("ActiveDriver - {}", this->id),
+              "Failed to Get Updates");
           continue;
         }
 
@@ -307,8 +306,8 @@ private:
         id = waitingList.back();
         waitingList.pop_back();
         try {
-          CROW_LOG_INFO << fmt::format("ActiveDriver - {}: getting {}",
-                                       this->id, id);
+          log(fmt::format("ActiveDriver - {}", this->id),
+              fmt::format("Getting {}", id));
           DetailsManga *manga =
               (DetailsManga *)driver->getManga({id}, true, proxy).at(0);
 
@@ -395,8 +394,8 @@ private:
 
           transaction.commit();
         } catch (...) {
-          CROW_LOG_INFO << fmt::format(
-              "ActiveDriver - {}: failed to getting {}", this->id, id);
+          log(fmt::format("ActiveDriver - {}", this->id),
+              fmt::format("Failed to Get {}", id));
           waitingList.insert(waitingList.begin(), id);
         }
       }

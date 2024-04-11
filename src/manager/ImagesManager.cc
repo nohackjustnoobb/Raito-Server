@@ -153,7 +153,7 @@ void ImagesManager::cleaner() {
       };
 
   while (true) {
-    CROW_LOG_INFO << "Clearing Image Cache";
+    log("ImagesManager", "Clearing Image Cache");
     if (filesystem::exists(path) && filesystem::is_directory(path))
       processDirectory(path);
 
