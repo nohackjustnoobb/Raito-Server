@@ -21,4 +21,4 @@ WORKDIR /app/build
 RUN chmod +x Raito-Server
 
 EXPOSE 8000
-CMD [ "sh", "-c", "/app/build/Raito-Server" ]
+CMD [ "stdbuf", "-oL", "sh", "-c", "/app/build/Raito-Server" ]

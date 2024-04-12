@@ -13,11 +13,10 @@
 
 #include <FreeImage.h>
 #include <cstdlib>
-#include <iostream>
 #include <re2/re2.h>
 #include <string>
 
-#define RAITO_SERVER_VERSION "0.1.0-beta.15"
+#define RAITO_SERVER_VERSION "0.1.0-beta.16"
 
 int main() {
   setenv("RAITO_SERVER_VERSION", RAITO_SERVER_VERSION, 1);
@@ -25,14 +24,14 @@ int main() {
   // read the configuration file
   ifstream ifs("../config.json");
   if (!ifs.is_open()) {
-    cout << "Configuration file not found" << endl;
+    log("Main", "Configuration file not found");
     return 1;
   }
 
   json config;
   ifs >> config;
   if (!config.contains("baseUrl")) {
-    cout << "\"baseUrl\" not found in the configuration file" << endl;
+    log("Main", "\"baseUrl\" not found in the configuration file");
     return 1;
   }
 
@@ -51,12 +50,13 @@ int main() {
     if (RE2::FullMatch(url, R"(^https?:\/\/.*\/$)"))
       webpageUrl = new string(url);
     else
-      cout << "\"webpageUrl\" is not valid, some features will be disabled"
-           << endl;
+      log("Main",
+          "\"webpageUrl\" is not valid, some features will be disabled");
+
   } else {
-    cout << "\"webpageUrl\" not found in the configuration file, some features "
-            "will be disabled"
-         << endl;
+    log("Main",
+        "\"webpageUrl\" not found in the configuration file, some features "
+        "will be disabled");
   }
 
   string *accessKey = nullptr;

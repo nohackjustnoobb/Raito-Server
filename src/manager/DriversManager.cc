@@ -6,6 +6,10 @@
 void DriversManager::add(BaseDriver *driver) { drivers.push_back(driver); }
 
 BaseDriver *DriversManager::get(string id) {
+  // the id should not be case sensitive
+  transform(id.begin(), id.end(), id.begin(),
+            [](unsigned char c) { return toupper(c); });
+
   for (const auto &driver : drivers) {
     if (driver->id == id)
       return driver;
