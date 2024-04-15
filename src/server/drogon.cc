@@ -402,7 +402,7 @@ void startDrogonServer(string *_webpageUrl, string *_accessKey) {
   // setup logger
   app().registerPreRoutingAdvice([](const HttpRequestPtr &req) {
     stringstream ss;
-    ss << &req;
+    ss << req;
 
     string ip = req->getHeader("X-Real-IP");
     if (ip == "")

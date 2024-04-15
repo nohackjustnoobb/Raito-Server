@@ -3,7 +3,10 @@
 
 #include <algorithm>
 
-void DriversManager::add(BaseDriver *driver) { drivers.push_back(driver); }
+void DriversManager::add(BaseDriver *driver) {
+  drivers.push_back(driver);
+  imagesManager.add(driver->id, driver->proxyHeaders);
+}
 
 BaseDriver *DriversManager::get(string id) {
   // the id should not be case sensitive
