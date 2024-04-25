@@ -7,10 +7,13 @@
 #include <ctime>
 #include <locale>
 #include <mutex>
+#include <fmt/format.h>
 #include <nlohmann/json.hpp>
 #include <thread>
 
 #define TIMEOUT_LIMIT 5000
+
+#define PULL_DURATION 30
 
 #define CHECK_TIMEOUT()                                                        \
   if (r.status_code == 0)                                                      \
@@ -20,7 +23,7 @@ using namespace MHG_utils;
 
 MHG::MHG() {
   id = "MHG";
-  version = "0.1.0-beta.5";
+  version = "0.1.0-beta.6";
 
   supportSuggestion = false;
   recommendedChunkSize = 5;
@@ -170,7 +173,7 @@ vector<Manga *> MHG::search(string keyword, int page) {
 };
 
 vector<PreviewManga> MHG::getUpdates(string proxy) {
-  cpr::Url url{"https://tw.manhuagui.com/update/d3.html"};
+  cpr::Url url{fmt::format("https://tw.manhuagui.com/update/d{}.html", PULL_DURATION)};
   cpr::Response r = proxy == "" ? cpr::Get(url, cpr::Timeout{TIMEOUT_LIMIT})
                                 : cpr::Get(url, cpr::Timeout{TIMEOUT_LIMIT},
                                            cpr::Proxies{{"https", proxy}});
