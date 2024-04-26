@@ -5,9 +5,9 @@
 
 #include <cpr/cpr.h>
 #include <ctime>
+#include <fmt/format.h>
 #include <locale>
 #include <mutex>
-#include <fmt/format.h>
 #include <nlohmann/json.hpp>
 #include <thread>
 
@@ -23,7 +23,7 @@ using namespace MHG_utils;
 
 MHG::MHG() {
   id = "MHG";
-  version = "0.1.0-beta.6";
+  version = "0.1.0-beta.7";
 
   supportSuggestion = false;
   recommendedChunkSize = 5;
@@ -173,7 +173,8 @@ vector<Manga *> MHG::search(string keyword, int page) {
 };
 
 vector<PreviewManga> MHG::getUpdates(string proxy) {
-  cpr::Url url{fmt::format("https://tw.manhuagui.com/update/d{}.html", PULL_DURATION)};
+  cpr::Url url{
+      fmt::format("https://tw.manhuagui.com/update/d{}.html", PULL_DURATION)};
   cpr::Response r = proxy == "" ? cpr::Get(url, cpr::Timeout{TIMEOUT_LIMIT})
                                 : cpr::Get(url, cpr::Timeout{TIMEOUT_LIMIT},
                                            cpr::Proxies{{"https", proxy}});
@@ -209,7 +210,7 @@ vector<PreviewManga> MHG::getUpdates(string proxy) {
 bool MHG::isLatestEqual(string value1, string value2) {
   // create a new copy
   string normalizedValue1 = string(value1);
-  string normalizedValue2 = string(value1);
+  string normalizedValue2 = string(value2);
 
   RE2::GlobalReplace(&normalizedValue1, RE2("第"), "");
   RE2::GlobalReplace(&normalizedValue2, RE2("第"), "");
