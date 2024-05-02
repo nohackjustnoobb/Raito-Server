@@ -1,4 +1,5 @@
 #include "DriversManager.hpp"
+#include "../utils/utils.hpp"
 #include "ImagesManager.hpp"
 
 #include <algorithm>
@@ -6,6 +7,7 @@
 void DriversManager::add(BaseDriver *driver) {
   drivers.push_back(driver);
   imagesManager.add(driver->id, driver->proxyHeaders);
+  log("DriversManager", "Registered " + driver->id);
 }
 
 BaseDriver *DriversManager::get(string id) {

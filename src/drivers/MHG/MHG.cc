@@ -173,11 +173,15 @@ vector<Manga *> MHG::search(string keyword, int page) {
 };
 
 vector<PreviewManga> MHG::getUpdates(string proxy) {
-  cpr::Url url{
-      fmt::format("https://tw.manhuagui.com/update/d{}.html", PULL_DURATION)};
-  cpr::Response r = proxy == "" ? cpr::Get(url, cpr::Timeout{TIMEOUT_LIMIT})
-                                : cpr::Get(url, cpr::Timeout{TIMEOUT_LIMIT},
-                                           cpr::Proxies{{"https", proxy}});
+  cpr::Session session;
+  session.SetUrl(cpr::Url{
+      fmt::format("https://tw.manhuagui.com/update/d{}.html", PULL_DURATION)});
+  session.SetTimeout(cpr::Timeout{TIMEOUT_LIMIT});
+
+  if (proxy != "")
+    session.SetProxies(cpr::Proxies{{"https", proxy}, {"http", proxy}});
+
+  cpr::Response r = session.Get();
 
   CHECK_TIMEOUT()
 
@@ -212,6 +216,7 @@ bool MHG::isLatestEqual(string value1, string value2) {
   string normalizedValue1 = string(value1);
   string normalizedValue2 = string(value2);
 
+  // TODO some title like "19卷 報告" and "19卷" should be normalized also
   RE2::GlobalReplace(&normalizedValue1, RE2("第"), "");
   RE2::GlobalReplace(&normalizedValue2, RE2("第"), "");
 

@@ -72,18 +72,28 @@ vector<string> ImagesManager::getImage(string id, string genre, string hash,
   getline(ifs, url);
 
   // fetch the image
-  cpr::Response r;
+  cpr::Session session;
+  session.SetUrl(cpr::Url(url));
+  session.SetHeader(settings[id]);
+  session.SetTimeout(cpr::Timeout{5000});
+  session.SetHttpVersion(cpr::HttpVersion{
+      cpr::HttpVersionCode::VERSION_2_0_PRIOR_KNOWLEDGE}); // Is this helping?
+
   if (this->proxy != nullptr)
-    r = cpr::Get(cpr::Url(url), settings[id], cpr::Timeout{5000},
-                 cpr::Proxies{{"https", *this->proxy}, {"http", *this->proxy}});
-  else
-    r = cpr::Get(cpr::Url(url), settings[id], cpr::Timeout{5000});
+    session.SetProxies(
+        cpr::Proxies{{"https", *this->proxy}, {"http", *this->proxy}});
+
+  cpr::Response r = session.Get();
 
   if (r.status_code >= 300 || r.status_code < 200)
     throw "Error fetching image";
 
   if (r.status_code == 0)
     throw "Request timeout";
+
+  // retry if the content length is not matching
+  if (r.header.at("content-length") != to_string(r.downloaded_bytes))
+    return this->getImage(id, genre, hash, useBase64);
 
   // load the image
   FIMEMORY *hmem = FreeImage_OpenMemory((BYTE *)&r.text[0], r.text.length());

@@ -16,7 +16,7 @@
 #include <re2/re2.h>
 #include <string>
 
-#define RAITO_SERVER_VERSION "0.1.0-beta.17"
+#define RAITO_SERVER_VERSION "0.1.0-beta.18"
 
 int main() {
   setenv("RAITO_SERVER_VERSION", RAITO_SERVER_VERSION, 1);
