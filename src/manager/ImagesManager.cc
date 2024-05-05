@@ -92,7 +92,8 @@ vector<string> ImagesManager::getImage(string id, string genre, string hash,
     throw "Request timeout";
 
   // retry if the content length is not matching
-  if (r.header.at("content-length") != to_string(r.downloaded_bytes))
+  if (r.header.find("content-length") != r.header.end() &&
+      r.header.at("content-length") != to_string(r.downloaded_bytes))
     return this->getImage(id, genre, hash, useBase64);
 
   // load the image

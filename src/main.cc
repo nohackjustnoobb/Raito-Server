@@ -1,5 +1,6 @@
 #include "manager/DriversManager.hpp"
 #include "manager/ImagesManager.hpp"
+#include "utils/utils.hpp"
 
 // Drivers
 #include "drivers/ActiveAdapter.cc"
@@ -16,9 +17,11 @@
 #include <re2/re2.h>
 #include <string>
 
-#define RAITO_SERVER_VERSION "0.1.0-beta.18"
+#define RAITO_SERVER_VERSION "0.1.0-beta.19"
 
 int main() {
+  log("RaitoServer",
+      fmt::format("Running at Version {}", RAITO_SERVER_VERSION));
   setenv("RAITO_SERVER_VERSION", RAITO_SERVER_VERSION, 1);
 
   // read the configuration file

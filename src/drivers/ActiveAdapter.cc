@@ -286,7 +286,6 @@ private:
           id = query.getColumn(0).getString();
 
           // check if updated and not in the waiting list
-
           if (!this->driver->isLatestEqual(query.getColumn(7).getString(),
                                            latestMap[id]) &&
               find(waitingList.begin(), waitingList.end(), id) ==
