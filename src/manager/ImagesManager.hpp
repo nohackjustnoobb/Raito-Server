@@ -32,9 +32,11 @@ public:
 
   void cleaner();
 
-  string getPath(string id, string genre, string dest);
+  string getPath(const string &id, const string &genre, const string &dest,
+                 const string &baseUrl);
 
-  vector<string> getImage(string id, string genre, string hash, bool asBase64);
+  vector<string> getImage(const string &id, const string &genre,
+                          const string &hash, bool asBase64);
 
 private:
   map<string, cpr::Header, CaseInsensitiveCompare> settings;

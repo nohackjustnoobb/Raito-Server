@@ -23,7 +23,8 @@ void ImagesManager::setBaseUrl(string url) { this->url = url; }
 
 void ImagesManager::setProxy(string proxy) { this->proxy = new string(proxy); }
 
-string ImagesManager::getPath(string id, string genre, string dest) {
+string ImagesManager::getPath(const string &id, const string &genre,
+                              const string &dest, const string &baseUrl) {
   filesystem::create_directories(fmt::format("../image/{}/{}", id, genre));
 
   string removeHost = dest;
@@ -38,11 +39,12 @@ string ImagesManager::getPath(string id, string genre, string dest) {
     ofs.close();
   }
 
-  return fmt::format("{}image/{}/{}/{}", url, id, genre, hash);
+  return fmt::format("{}image/{}/{}/{}", url.empty() ? baseUrl : url, id, genre,
+                     hash);
 }
 
-vector<string> ImagesManager::getImage(string id, string genre, string hash,
-                                       bool useBase64) {
+vector<string> ImagesManager::getImage(const string &id, const string &genre,
+                                       const string &hash, bool useBase64) {
   string path = fmt::format("../image/{}/{}/{}.src", id, genre, hash);
   if (!filesystem::exists(path))
     throw "Image cannot be found";

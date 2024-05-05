@@ -62,7 +62,9 @@ public:
     return result;
   }
 
-  void useProxy() { thumbnail = driver->useProxy(thumbnail, "thumbnail"); }
+  void useProxy(const string &baseUrl) {
+    thumbnail = driver->useProxy(thumbnail, "thumbnail", baseUrl);
+  }
 };
 
 class DetailsManga : public Manga {

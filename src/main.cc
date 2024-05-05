@@ -17,69 +17,18 @@
 #include <re2/re2.h>
 #include <string>
 
-#define RAITO_SERVER_VERSION "0.1.0-beta.19"
+#define RAITO_SERVER_VERSION "0.1.0-beta.20"
+#define RAITO_DEFAULT_FRAMEWORK "crow"
 
 int main() {
   log("RaitoServer",
       fmt::format("Running at Version {}", RAITO_SERVER_VERSION));
   setenv("RAITO_SERVER_VERSION", RAITO_SERVER_VERSION, 1);
 
-  // read the configuration file
-  ifstream ifs("../config.json");
-  if (!ifs.is_open()) {
-    log("Main", "Configuration file not found");
-    return 1;
-  }
-
-  json config;
-  ifs >> config;
-  if (!config.contains("baseUrl")) {
-    log("Main", "\"baseUrl\" not found in the configuration file");
-    return 1;
-  }
-
-  // initialize the imagesManager
-  string baseUrl = config["baseUrl"].get<string>();
-  if (!RE2::FullMatch(baseUrl, R"(^https?:\/\/.*\/$)"))
-    throw "\"baseUrl\" is not valid";
-
-  imagesManager.setBaseUrl(baseUrl);
-
   string *webpageUrl = nullptr;
-  // set the webpage url
-  if (config.contains("webpageUrl")) {
-    string url = config["webpageUrl"].get<string>();
-
-    if (RE2::FullMatch(url, R"(^https?:\/\/.*\/$)"))
-      webpageUrl = new string(url);
-    else
-      log("Main",
-          "\"webpageUrl\" is not valid, some features will be disabled");
-
-  } else {
-    log("Main",
-        "\"webpageUrl\" not found in the configuration file, some features "
-        "will be disabled");
-  }
-
   string *accessKey = nullptr;
-  if (config.contains("accessKey") && !config["accessKey"].is_null() &&
-      config["accessKey"].get<string>() != "")
-    accessKey = new string(config["accessKey"].get<string>());
-
-  // set port
+  string framework = RAITO_DEFAULT_FRAMEWORK;
   int port = 8000;
-  if (config.contains("port"))
-    port = config["port"].get<int>();
-  setenv("RAITO_SERVER_PORT", to_string(port).c_str(), 1);
-
-  // set image proxy
-  if (config.contains("imageProxy"))
-    imagesManager.setProxy(config["imageProxy"].get<string>());
-
-  // set interval
-  if (config.contains("clearCache"))
-    imagesManager.setInterval(config["clearCache"].get<string>());
 
   // TODO You can add your own drivers here:
   BaseDriver *drivers[] = {
@@ -88,25 +37,84 @@ int main() {
       new ActiveAdapter(new MHG()),
   };
 
-  // register drivers
-  if (config.contains("includeDrivers")) {
-    vector<string> includeDrivers =
-        config["includeDrivers"].get<vector<string>>();
+  auto applyConfig = [&](json config) {
+    // initialize the imagesManager
+    if (config.contains("baseUrl")) {
+      string baseUrl = config["baseUrl"].get<string>();
+      if (RE2::FullMatch(baseUrl, R"(^https?:\/\/.*\/$)"))
+        imagesManager.setBaseUrl(baseUrl);
+      else
+        log("RaitoServer", "\"baseUrl\" is not valid and is ignored");
+    }
 
-    for (const auto &driver : drivers)
-      if (find(includeDrivers.begin(), includeDrivers.end(), driver->id) !=
-          includeDrivers.end())
+    // set the webpage url
+    if (config.contains("webpageUrl")) {
+      string url = config["webpageUrl"].get<string>();
+
+      if (RE2::FullMatch(url, R"(^https?:\/\/.*\/$)"))
+        webpageUrl = new string(url);
+      else
+        log("RaitoServer", "\"webpageUrl\" is not valid and is ignored; some "
+                           "features will be disabled");
+    } else {
+      log("RaitoServer", "\"webpageUrl\" is not found in the configuration "
+                         "file; some features will be disabled");
+    }
+
+    // set the access key
+    if (config.contains("accessKey") && !config["accessKey"].is_null() &&
+        config["accessKey"].get<string>() != "")
+      accessKey = new string(config["accessKey"].get<string>());
+
+    // set port
+    if (config.contains("port"))
+      port = config["port"].get<int>();
+
+    // set image proxy
+    if (config.contains("imageProxy"))
+      imagesManager.setProxy(config["imageProxy"].get<string>());
+
+    // set interval
+    if (config.contains("clearCache"))
+      imagesManager.setInterval(config["clearCache"].get<string>());
+
+    // register drivers
+    if (config.contains("includeDrivers")) {
+      vector<string> includeDrivers =
+          config["includeDrivers"].get<vector<string>>();
+
+      for (const auto &driver : drivers)
+        if (find(includeDrivers.begin(), includeDrivers.end(), driver->id) !=
+            includeDrivers.end())
+          driversManager.add(driver);
+
+    } else if (config.contains("excludeDrivers")) {
+      vector<string> excludeDrivers =
+          config["excludeDrivers"].get<vector<string>>();
+
+      for (const auto &driver : drivers)
+        if (std::find(excludeDrivers.begin(), excludeDrivers.end(),
+                      driver->id) == excludeDrivers.end())
+          driversManager.add(driver);
+    } else {
+      for (const auto &driver : drivers)
         driversManager.add(driver);
+    }
 
-  } else if (config.contains("excludeDrivers")) {
-    vector<string> excludeDrivers =
-        config["excludeDrivers"].get<vector<string>>();
+    if (config.contains("framework"))
+      framework = config["framework"].get<string>();
+  };
 
-    for (const auto &driver : drivers)
-      if (std::find(excludeDrivers.begin(), excludeDrivers.end(), driver->id) ==
-          excludeDrivers.end())
-        driversManager.add(driver);
+  // read the configuration file
+  ifstream ifs("../config.json");
+  if (ifs.is_open()) {
+    json config;
+    ifs >> config;
+    applyConfig(config);
+    ifs.close();
   } else {
+    log("RaitoServer",
+        "Configuration file not found, some features will be disabled");
     for (const auto &driver : drivers)
       driversManager.add(driver);
   }
@@ -115,11 +123,10 @@ int main() {
   // server initialization
   FreeImage_Initialise();
 
-  if (config.contains("framework") &&
-      config["framework"].get<string>() == "drogon")
-    startDrogonServer(webpageUrl, accessKey);
+  if (framework == "drogon")
+    startDrogonServer(port, webpageUrl, accessKey);
   else
-    startCrowServer(webpageUrl, accessKey);
+    startCrowServer(port, webpageUrl, accessKey);
 
   FreeImage_DeInitialise();
 

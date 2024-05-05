@@ -34,6 +34,10 @@
 
 #define GET_PROXY()                                                            \
   bool proxy = false;                                                          \
+  string baseUrl;                                                              \
+  string host = req->getHeader("host");                                        \
+  if (!host.empty())                                                           \
+    baseUrl = fmt::format("https://{}/", host);                                \
   string tryProxy = req->getParameter("proxy");                                \
   if (tryProxy != "") {                                                        \
     try {                                                                      \
@@ -175,7 +179,7 @@ auto getList = [](const HttpRequestPtr &req,
     json result = json::array();
     for (Manga *manga : mangas) {
       if (proxy)
-        manga->useProxy();
+        manga->useProxy(baseUrl);
 
       result.push_back(manga->toJson());
     }
@@ -230,7 +234,7 @@ auto getManga = [](const HttpRequestPtr &req,
     json result = json::array();
     for (Manga *manga : mangas) {
       if (proxy)
-        manga->useProxy();
+        manga->useProxy(baseUrl);
 
       result.push_back(manga->toJson());
     }
@@ -265,7 +269,7 @@ auto getChapter = [](const HttpRequestPtr &req,
     json result = json::array();
     if (proxy)
       for (const string &url : urls)
-        result.push_back(driver->useProxy(url, "manga"));
+        result.push_back(driver->useProxy(url, "manga", baseUrl));
     else
       result = urls;
 
@@ -307,7 +311,7 @@ auto getSearch = [](const HttpRequestPtr &req,
     json result = json::array();
     for (Manga *manga : mangas) {
       if (proxy)
-        manga->useProxy();
+        manga->useProxy(baseUrl);
 
       result.push_back(manga->toJson());
     }
@@ -340,18 +344,12 @@ auto getShare = [](const HttpRequestPtr &req,
       throw "Driver not found";
 
     // get proxy
-    bool proxy = false;
-    string tryProxy = req->getParameter("proxy");
-    if (tryProxy != "")
-      try {
-        proxy = std::stoi(tryProxy) == 1;
-      } catch (...) {
-      }
+    GET_PROXY()
 
     // get the manga
     DetailsManga *manga = (DetailsManga *)(driver->getManga({id}, true).at(0));
     if (proxy)
-      manga->useProxy();
+      manga->useProxy(baseUrl);
 
     // generate the webpage
     resp->setContentTypeCode(CT_TEXT_HTML);
@@ -385,7 +383,7 @@ auto getImage = [](const HttpRequestPtr &req,
     string cacheControl = req->getHeader("Cache-Control");
 
     resp->addHeader("Cache-Control",
-                    cacheControl != "" ? cacheControl : "max-age=43200");
+                    cacheControl.empty() ? "max-age=43200" : cacheControl);
 
     return callback(resp);
   } catch (...) {
@@ -393,7 +391,7 @@ auto getImage = [](const HttpRequestPtr &req,
   }
 };
 
-void startDrogonServer(string *_webpageUrl, string *_accessKey) {
+void startDrogonServer(int port, string *_webpageUrl, string *_accessKey) {
   webpageUrl = _webpageUrl;
   accessKey = _accessKey;
   serverVersion = string(getenv("RAITO_SERVER_VERSION"));
@@ -470,7 +468,6 @@ void startDrogonServer(string *_webpageUrl, string *_accessKey) {
   app().registerHandler("/share", getShare, {Get, Options});
   app().registerHandler("/image/{1}/{2}/{3}", getImage, {Get, Options});
 
-  int port = atoi(getenv("RAITO_SERVER_PORT"));
   log("Drogon", fmt::format("Listening on Port {}", port));
   app().setThreadNum(0).addListener("0.0.0.0", port).run();
 }

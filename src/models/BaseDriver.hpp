@@ -34,7 +34,8 @@ public:
 
   virtual bool checkOnline() = 0;
 
-  virtual string useProxy(const string &dest, const string &genre) {
-    return imagesManager.getPath(id, genre, dest);
+  virtual string useProxy(const string &dest, const string &genre,
+                          const string &baseUrl) {
+    return imagesManager.getPath(id, genre, dest, baseUrl);
   }
 };

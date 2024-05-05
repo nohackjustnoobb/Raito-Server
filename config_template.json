@@ -1,6 +1,8 @@
+// PLEASE REMOVE ALL COMMENTS FROM THE REAL CONFIGURATION FILE
 {
-    // Required, the base url to this server
+    // Optional, the base url to this server
     // It is essential to have "/" at the end
+    // If not provided, it will always use the HOST in the header with HTTPS
     "baseUrl": "http://example.com/",
     // Optional, the framework used for building the http server
     // Available options: "crow", "drogon"

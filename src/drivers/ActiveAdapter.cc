@@ -52,11 +52,14 @@ public:
     }
     inFile.close();
 
+    // TODO provide a proper way to config the drive
     ifstream ifs("../config.json");
-    json config;
-    ifs >> config;
-    if (config.contains("proxies"))
-      proxies = config["proxies"].get<vector<string>>();
+    if (ifs.is_open()) {
+      json config;
+      ifs >> config;
+      if (config.contains("proxies"))
+        proxies = config["proxies"].get<vector<string>>();
+    }
 
     // start a thread
     thread(&ActiveAdapter::updater, this).detach();

@@ -23,6 +23,10 @@
 
 #define GET_PROXY()                                                            \
   bool proxy = false;                                                          \
+  string baseUrl;                                                              \
+  string host = req.get_header_value("host");                                  \
+  if (!host.empty())                                                           \
+    baseUrl = fmt::format("https://{}/", host);                                \
   char *tryProxy = req.url_params.get("proxy");                                \
   if (tryProxy != nullptr) {                                                   \
     try {                                                                      \
@@ -157,7 +161,7 @@ crow::response getList(const crow::request &req) {
     json result = json::array();
     for (Manga *manga : mangas) {
       if (proxy)
-        manga->useProxy();
+        manga->useProxy(baseUrl);
 
       result.push_back(manga->toJson());
     }
@@ -212,7 +216,7 @@ crow::response getManga(const crow::request &req) {
     json result = json::array();
     for (Manga *manga : mangas) {
       if (proxy)
-        manga->useProxy();
+        manga->useProxy(baseUrl);
 
       result.push_back(manga->toJson());
     }
@@ -246,7 +250,7 @@ crow::response getChapter(const crow::request &req) {
     json result = json::array();
     if (proxy)
       for (const string &url : urls)
-        result.push_back(driver->useProxy(url, "manga"));
+        result.push_back(driver->useProxy(url, "manga", baseUrl));
     else
       result = urls;
 
@@ -288,7 +292,7 @@ crow::response getSearch(const crow::request &req) {
     json result = json::array();
     for (Manga *manga : mangas) {
       if (proxy)
-        manga->useProxy();
+        manga->useProxy(baseUrl);
 
       result.push_back(manga->toJson());
     }
@@ -321,18 +325,12 @@ crow::response getShare(const crow::request &req) {
       throw "Driver not found";
 
     // get proxy
-    bool proxy = false;
-    char *tryProxy = req.url_params.get("proxy");
-    if (tryProxy != nullptr)
-      try {
-        proxy = std::atoi(tryProxy) == 1;
-      } catch (...) {
-      }
+    GET_PROXY()
 
     // get the manga
     DetailsManga *manga = (DetailsManga *)(driver->getManga({id}, true).at(0));
     if (proxy)
-      manga->useProxy();
+      manga->useProxy(baseUrl);
 
     // generate the webpage
     resp.set_header("Content-Type", crow::mime_types.at("html"));
@@ -422,7 +420,7 @@ struct AccessGuard {
   }
 };
 
-void startCrowServer(string *_webpageUrl, string *_accessKey) {
+void startCrowServer(int port, string *_webpageUrl, string *_accessKey) {
   webpageUrl = _webpageUrl;
   accessKey = _accessKey;
   serverVersion = string(getenv("RAITO_SERVER_VERSION"));
@@ -450,7 +448,6 @@ void startCrowServer(string *_webpageUrl, string *_accessKey) {
   CROW_ROUTE(app, "/share")(getShare);
   CROW_ROUTE(app, "/image/<string>/<string>/<string>")(getImage);
 
-  int port = atoi(getenv("RAITO_SERVER_PORT"));
   log("Crow", fmt::format("Listening on Port {}", port));
   app.port(port).multithreaded().run();
 }
