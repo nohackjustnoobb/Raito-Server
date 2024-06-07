@@ -26,7 +26,8 @@
   string baseUrl;                                                              \
   string host = req.get_header_value("host");                                  \
   if (!host.empty())                                                           \
-    baseUrl = fmt::format("https://{}/", host);                                \
+    baseUrl =                                                                  \
+        fmt::format("{}://{}/", isLocalIp(host) ? "http" : "https", host);     \
   char *tryProxy = req.url_params.get("proxy");                                \
   if (tryProxy != nullptr) {                                                   \
     try {                                                                      \

@@ -39,19 +39,23 @@ string ImagesManager::getPath(const string &id, const string &genre,
     ofs.close();
   }
 
-  return fmt::format("{}image/{}/{}/{}", url.empty() ? baseUrl : url, id, genre,
-                     hash);
+  return fmt::format("{}image/{}/{}/{}.{}", url.empty() ? baseUrl : url, id,
+                     genre, hash, SAVE_FORMAT);
 }
 
 vector<string> ImagesManager::getImage(const string &id, const string &genre,
                                        const string &hash, bool useBase64) {
-  string path = fmt::format("../image/{}/{}/{}.src", id, genre, hash);
+  string removedExtension = string(hash);
+  RE2::GlobalReplace(&removedExtension, fmt::format(".{}", SAVE_FORMAT), "");
+
+  string path =
+      fmt::format("../image/{}/{}/{}.src", id, genre, removedExtension);
   if (!filesystem::exists(path))
     throw "Image cannot be found";
 
   // check the cache
-  string imagePath =
-      fmt::format("../image/{}/{}/{}.{}", id, genre, hash, SAVE_FORMAT);
+  string imagePath = fmt::format("../image/{}/{}/{}.{}", id, genre,
+                                 removedExtension, SAVE_FORMAT);
   if (filesystem::exists(imagePath)) {
     std::ifstream imageFile(imagePath, std::ios::binary);
 

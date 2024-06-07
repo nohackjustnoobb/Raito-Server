@@ -37,7 +37,8 @@
   string baseUrl;                                                              \
   string host = req->getHeader("host");                                        \
   if (!host.empty())                                                           \
-    baseUrl = fmt::format("https://{}/", host);                                \
+    baseUrl =                                                                  \
+        fmt::format("{}://{}/", isLocalIp(host) ? "http" : "https", host);     \
   string tryProxy = req->getParameter("proxy");                                \
   if (tryProxy != "") {                                                        \
     try {                                                                      \

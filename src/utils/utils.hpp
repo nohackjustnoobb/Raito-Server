@@ -72,3 +72,9 @@ static bool isSuccess(const int &code) {
   int firstDigit = code / 100;
   return firstDigit != 4 && firstDigit != 5;
 }
+
+static bool isLocalIp(const string &ip) {
+  return RE2::FullMatch(
+      ip,
+      R"((localhost|10\.([0-9]{1,3}\.){2}[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[0-1])\.([0-9]{1,3}\.)[0-9]{1,3}|192\.168\.([0-9]{1,3}\.)[0-9]{1,3}|127\.([0-9]{1,3}\.){2}[0-9]{1,3}):?\d*$)");
+}
