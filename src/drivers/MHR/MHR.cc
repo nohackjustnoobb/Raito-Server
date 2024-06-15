@@ -355,7 +355,7 @@ string MHR::extractThumbnail(const string &url) {
 }
 
 vector<string> MHR::extractAuthors(const string authorsString) {
-  vector<string> authors = MHR_utils::split(authorsString, RE2("，|,|、| |/"));
+  vector<string> authors = split(authorsString, RE2("，|,|、| |/"));
 
   authors.erase(remove_if(authors.begin(), authors.end(),
                           [](string str) {

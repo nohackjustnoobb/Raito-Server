@@ -352,7 +352,7 @@ vector<string> DM5::decodeChapters(const string &encoded, const int &len1,
 
   RE2::GlobalReplace(&decoded, RE2(R"((.+\[\\')|\];)"), "");
 
-  vector<string> result = DM5_utils::split(decoded, RE2(R"(\\',\\'|\\')"));
+  vector<string> result = split(decoded, RE2(R"(\\',\\'|\\')"));
 
   return result;
 }

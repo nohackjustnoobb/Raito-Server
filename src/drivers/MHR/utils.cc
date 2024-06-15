@@ -1,3 +1,5 @@
+#include "../../utils/utils.hpp"
+
 #include <cpr/cpr.h>
 #include <iomanip>
 #include <re2/re2.h>
@@ -40,22 +42,6 @@ static string urlEncode(const string &text) {
   RE2::GlobalReplace(&encodedText, RE2("\\*"), "%2A");
 
   return encodedText;
-}
-
-static vector<string> split(string s, RE2 r) {
-  vector<string> splits;
-
-  // Use GlobalReplace to split the string
-  RE2::GlobalReplace(&s, r, "\u001D");
-
-  // Tokenize the modified string by \u001D
-  istringstream tokenizer(s);
-  string token;
-  while (getline(tokenizer, token, '\u001D')) {
-    splits.push_back(token);
-  }
-
-  return splits;
 }
 
 } // namespace MHR_utils

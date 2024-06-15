@@ -1,32 +1,51 @@
 // PLEASE REMOVE ALL COMMENTS FROM THE REAL CONFIGURATION FILE
 {
-    // Optional, the base url to this server
-    // It is essential to have "/" at the end
-    // If not provided, it will always use the HOST in the header with HTTPS
-    "baseUrl": "http://example.com/",
-    // Optional, the framework used for building the http server
-    // Available options: "crow", "drogon"
-    // Default: "crow"
-    "framework": "crow",
-    // Optional, the port to listen on
-    // Default: 8000
-    "port": 8000,
-    // Optional, the base url to the frontend webpage
-    // It is essential to have "/" at the end
-    // If not provided, some features will be disabled
-    "webpageUrl": "http://example.com/",
+    "server": {
+        // Optional, the base url to this server
+        // It is essential to have "/" at the end
+        // If not provided, it will always use the HOST in the header with HTTPS
+        "baseUrl": "http://example.com/",
+        // Optional, the framework used for building the http server
+        // Available options: "crow", "drogon"
+        // Default: "crow"
+        "framework": "crow",
+        // Optional, the port to listen on
+        // Default: 8000
+        "port": 8000,
+        // Optional, the base url to the frontend webpage
+        // It is essential to have "/" at the end
+        // If not provided, some features will be disabled
+        "webpageUrl": "http://example.com/"
+    },
     // Optional, if it is set, the users will need the same key to access the server
     "accessKey": "exampleKey",
-    // Optional, the ids in the list will be excluded
-    "excludeDrivers": [],
-    // Optional, only the ids in the list will be included
-    // "includeDrivers" have higher precedence than "excludeDrivers"
-    "includeDrivers": [],
-    // Optional, only active drivers will use the proxy
-    "proxies": [],
-    // Optional, proxy that only used when fetching images
-    "imageProxy": "sock5://example.com",
-    // Optional, set the interval for clearing image cache
-    // Valid units: "m"(minutes), "h"(hours), "d"(days)
-    "clearCache": "1d"
+    "driver": {
+        // Optional, the ids in the list will be excluded
+        "exclude": [],
+        // Optional, only the ids in the list will be included
+        // "include" have higher precedence than "exclude"
+        "include": [],
+        // Optional, only active drivers will use the proxy
+        "proxies": [],
+        // Optional, config that applied to specific driver
+        // the key will be the driver's id and the value will pass to the driver directly
+        "config": {
+            // Optional, the configuration of active drivers
+            "exampleActiveDriverID": {
+                // Optional, the sql backend to use
+                // Default: sqlite3
+                "sql": "sqlite3",
+                // Optional, the parameters of the sql backend
+                // Default: ../data/{driverId}.sqlite3
+                "parameters": "db=id.sqlite3"
+            }
+        }
+    },
+    "image": {
+        // Optional, proxy that only used when fetching images
+        "proxy": "sock5://example.com",
+        // Optional, set the interval for clearing image caches
+        // Valid units: "m"(minutes), "h"(hours), "d"(days)
+        "clearCaches": "1d"
+    }
 }

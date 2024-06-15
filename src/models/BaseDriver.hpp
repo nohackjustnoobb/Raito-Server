@@ -12,7 +12,7 @@ using namespace std;
 
 class BaseDriver {
 public:
-  string id; // Can't contain "'" otherwise the sql query cannot be parsed
+  string id; // Should only contain numbers and alphabetic characters
   string version;
   int recommendedChunkSize = 0;
   bool supportSuggestion;
@@ -38,4 +38,6 @@ public:
                           const string &baseUrl) {
     return imagesManager.getPath(id, genre, dest, baseUrl);
   }
+
+  virtual void applyConfig(json config) {}
 };

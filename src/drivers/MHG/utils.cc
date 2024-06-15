@@ -1,3 +1,5 @@
+#include "../../utils/utils.hpp"
+
 #include <iomanip>
 #include <re2/re2.h>
 #include <sstream>
@@ -7,33 +9,12 @@
 using namespace std;
 
 namespace MHG_utils {
-template <typename T> static void releaseMemory(vector<T> vector) {
-  for (T ptr : vector) {
-    delete ptr;
-  }
-}
 
 static string strip(const string &s) {
   string copy = s;
   RE2::GlobalReplace(&copy, RE2(R"(^\s+|\s+$)"), "");
 
   return copy;
-}
-
-static vector<string> split(string s, RE2 r) {
-  vector<string> splits;
-
-  // Use GlobalReplace to split the string
-  RE2::GlobalReplace(&s, r, "\u001D");
-
-  // Tokenize the modified string by \u001D
-  std::istringstream tokenizer(s);
-  std::string token;
-  while (std::getline(tokenizer, token, '\u001D')) {
-    splits.push_back(token);
-  }
-
-  return splits;
 }
 
 static string decompress(const string &encoded, const int &len1,

@@ -3,7 +3,7 @@
 #include "utils/utils.hpp"
 
 // Drivers
-#include "drivers/ActiveAdapter.cc"
+#include "drivers/ActiveAdapter/ActiveAdapter.cc"
 #include "drivers/DM5/DM5.hpp"
 #include "drivers/MHG/MHG.hpp"
 #include "drivers/MHR/MHR.hpp"
@@ -15,9 +15,12 @@
 #include <FreeImage.h>
 #include <cstdlib>
 #include <re2/re2.h>
+#include <soci/sqlite3/soci-sqlite3.h>
+// #include <soci/mysql/soci-mysql.h>
+// #include <soci/postgresql/soci-postgresql.h>
 #include <string>
 
-#define RAITO_SERVER_VERSION "0.1.0-beta.21"
+#define RAITO_SERVER_VERSION "0.1.0-beta.22"
 #define RAITO_DEFAULT_FRAMEWORK "crow"
 
 int main() {
@@ -38,27 +41,37 @@ int main() {
   };
 
   auto applyConfig = [&](json config) {
-    // initialize the imagesManager
-    if (config.contains("baseUrl")) {
-      string baseUrl = config["baseUrl"].get<string>();
-      if (RE2::FullMatch(baseUrl, R"(^https?:\/\/.*\/$)"))
-        imagesManager.setBaseUrl(baseUrl);
-      else
-        log("RaitoServer", "\"baseUrl\" is not valid and is ignored");
-    }
+    if (config.contains("server")) {
+      json server = config["server"];
+      // initialize the imagesManager
+      if (server.contains("baseUrl")) {
+        string baseUrl = server["baseUrl"].get<string>();
+        if (RE2::FullMatch(baseUrl, R"(^https?:\/\/.*\/$)"))
+          imagesManager.setBaseUrl(baseUrl);
+        else
+          log("RaitoServer", "\"baseUrl\" is not valid and is ignored");
+      }
 
-    // set the webpage url
-    if (config.contains("webpageUrl")) {
-      string url = config["webpageUrl"].get<string>();
+      if (server.contains("framework"))
+        framework = server["framework"].get<string>();
 
-      if (RE2::FullMatch(url, R"(^https?:\/\/.*\/$)"))
-        webpageUrl = new string(url);
-      else
-        log("RaitoServer", "\"webpageUrl\" is not valid and is ignored; some "
-                           "features will be disabled");
-    } else {
-      log("RaitoServer", "\"webpageUrl\" is not found in the configuration "
-                         "file; some features will be disabled");
+      // set port
+      if (server.contains("port"))
+        port = server["port"].get<int>();
+
+      // set the webpage url
+      if (server.contains("webpageUrl")) {
+        string url = server["webpageUrl"].get<string>();
+
+        if (RE2::FullMatch(url, R"(^https?:\/\/.*\/$)"))
+          webpageUrl = new string(url);
+        else
+          log("RaitoServer", "\"webpageUrl\" is not valid and is ignored; some "
+                             "features will be disabled");
+      } else {
+        log("RaitoServer", "\"webpageUrl\" is not found in the configuration "
+                           "file; some features will be disabled");
+      }
     }
 
     // set the access key
@@ -66,43 +79,53 @@ int main() {
         config["accessKey"].get<string>() != "")
       accessKey = new string(config["accessKey"].get<string>());
 
-    // set port
-    if (config.contains("port"))
-      port = config["port"].get<int>();
+    if (config.contains("driver")) {
+      json driver = config["driver"];
 
-    // set image proxy
-    if (config.contains("imageProxy"))
-      imagesManager.setProxy(config["imageProxy"].get<string>());
+      // register drivers
+      if (driver.contains("include")) {
+        vector<string> include = driver["include"].get<vector<string>>();
 
-    // set interval
-    if (config.contains("clearCache"))
-      imagesManager.setInterval(config["clearCache"].get<string>());
+        for (const auto &driver : drivers)
+          if (find(include.begin(), include.end(), driver->id) != include.end())
+            driversManager.add(driver);
 
-    // register drivers
-    if (config.contains("includeDrivers")) {
-      vector<string> includeDrivers =
-          config["includeDrivers"].get<vector<string>>();
+      } else if (driver.contains("exclude")) {
+        vector<string> exclude = driver["exclude"].get<vector<string>>();
 
-      for (const auto &driver : drivers)
-        if (find(includeDrivers.begin(), includeDrivers.end(), driver->id) !=
-            includeDrivers.end())
+        for (const auto &driver : drivers)
+          if (std::find(exclude.begin(), exclude.end(), driver->id) ==
+              exclude.end())
+            driversManager.add(driver);
+      } else {
+        for (const auto &driver : drivers)
           driversManager.add(driver);
+      }
 
-    } else if (config.contains("excludeDrivers")) {
-      vector<string> excludeDrivers =
-          config["excludeDrivers"].get<vector<string>>();
+      for (auto &driverObject : driversManager.getAll()) {
+        json driverConfig = {};
 
-      for (const auto &driver : drivers)
-        if (std::find(excludeDrivers.begin(), excludeDrivers.end(),
-                      driver->id) == excludeDrivers.end())
-          driversManager.add(driver);
-    } else {
-      for (const auto &driver : drivers)
-        driversManager.add(driver);
+        if (driver.contains("config") &&
+            driver["config"].contains(driverObject->id))
+          driverConfig = driver["config"][driverObject->id];
+
+        if (driver.contains("proxies"))
+          driverConfig["proxies"] = driver["proxies"];
+
+        driverObject->applyConfig(driverConfig);
+      }
     }
 
-    if (config.contains("framework"))
-      framework = config["framework"].get<string>();
+    if (config.contains("image")) {
+      json image = config["image"];
+      // set image proxy
+      if (image.contains("proxy"))
+        imagesManager.setProxy(image["proxy"].get<string>());
+
+      // set interval
+      if (image.contains("clearCaches"))
+        imagesManager.setInterval(image["clearCaches"].get<string>());
+    }
   };
 
   // read the configuration file
@@ -122,6 +145,10 @@ int main() {
 
   // server initialization
   FreeImage_Initialise();
+  soci::register_factory_sqlite3();
+  // TODO dont know why this is not working
+  // soci::register_factory_mysql();
+  // soci::register_factory_postgresql();
 
   if (framework == "drogon")
     startDrogonServer(port, webpageUrl, accessKey);

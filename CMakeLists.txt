@@ -20,12 +20,10 @@ find_package(fmt REQUIRED CONFIG)
 find_package(cpr CONFIG REQUIRED)
 find_package(re2 REQUIRED)
 find_package(freeimage REQUIRED)
+find_package(SOCI REQUIRED)
 
 # dependencies for DM5
 find_package(lexbor REQUIRED)
-
-# dependencies for MHG
-find_package(SQLiteCpp REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
     Drogon::Drogon
@@ -36,10 +34,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     fmt::fmt
     cpr::cpr
     freeimage::freeimage
+    soci::soci
 
     # dependencies for DM5
     lexbor::lexbor_static
-
-    # dependencies for MHG
-    SQLiteCpp
 )
