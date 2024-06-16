@@ -1,7 +1,9 @@
 #pragma once
 
-#include "../../models/BaseDriver.hpp"
-#include "converter.hpp"
+#include "../../models/baseDriver.hpp"
+#include "../../models/manga.hpp"
+#include "../../utils/converter.hpp"
+
 #include "node.hpp"
 
 #include <cpr/cpr.h>

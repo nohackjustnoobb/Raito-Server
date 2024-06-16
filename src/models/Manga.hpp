@@ -1,25 +1,30 @@
 #pragma once
 
 #include "../utils/utils.hpp"
-#include "BaseDriver.hpp"
-#include "Common.hpp"
+#include "baseDriver.hpp"
+#include "common.hpp"
 
 #include <iostream>
 #include <nlohmann/json.hpp>
-#include <soci/soci.h>
 
 using json = nlohmann::json;
 
 struct Chapter {
+  // The title of the chapter.
   string title;
+  // The id of the chapter. This should be unique for all chapters.
   string id;
 };
 
 struct Chapters {
+  // The serial chapters of the manga.
   vector<Chapter> serial;
+  // The extra chapters of the manga.
   vector<Chapter> extra;
+  // The extra data required to get the chapter. Usually the id of the manga.
   string extraData;
 
+  // This should not be called directly.
   json toJson() {
     json result;
 
@@ -39,11 +44,17 @@ struct Chapters {
 
 class Manga {
 public:
+  // A pointer to the driver of the manga.
   BaseDriver *driver;
+  // The id of the manga. Should only contain numbers and alphabetic characters.
   string id;
+  // The name of the manga.
   string title;
+  // The url of the manga's thumbnail.
   string thumbnail;
+  // The latest chapter title of the manga.
   string latest;
+  // Determine whether the manga is already ended.
   bool isEnded;
 
   Manga(BaseDriver *driver, const string &id, const string &title,
@@ -51,6 +62,7 @@ public:
       : driver(driver), id(id), title(title), thumbnail(thumbnail),
         latest(latest), isEnded(isEnded) {}
 
+  // Convert the manga object into json object
   virtual json toJson() {
     json result;
 
@@ -64,6 +76,7 @@ public:
     return result;
   }
 
+  // Apply proxy settings to the thumbnail
   void useProxy(const string &baseUrl) {
     thumbnail = driver->useProxy(thumbnail, "thumbnail", baseUrl);
   }
@@ -71,10 +84,15 @@ public:
 
 class DetailsManga : public Manga {
 public:
+  // The description of the manga.
   string description;
+  // The catgory of the manga.
   vector<Category> categories;
+  // The chapters of the manga.
   Chapters chapters;
+  // The authors of the manga.
   vector<string> authors;
+  // The update date of the manga, encoded in seconds since epoch.
   int *updateTime;
 
   DetailsManga(BaseDriver *driver, const string &id, const string &title,
@@ -86,6 +104,7 @@ public:
         description(description), categories(categories), chapters(chapters),
         updateTime(updateTime) {}
 
+  // Convert the manga object into json object
   json toJson() override {
     json result;
 

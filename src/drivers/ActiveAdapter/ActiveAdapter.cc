@@ -1,7 +1,7 @@
-#include "../../manager/DriversManager.hpp"
-#include "../../models/ActiveDriver.hpp"
-#include "../../models/BaseDriver.hpp"
-#include "../../models/Manga.hpp"
+#include "../../manager/driversManager.hpp"
+#include "../../models/activeDriver.hpp"
+#include "../../models/baseDriver.hpp"
+#include "../../models/manga.hpp"
 #include "../../utils/utils.hpp"
 
 #include <algorithm>
@@ -22,6 +22,8 @@
 using namespace std;
 using namespace soci;
 
+// This is the adapter of the ActiveDriver. It will handles the updates and
+// caching of the database.
 class ActiveAdapter : public BaseDriver {
 public:
   ActiveAdapter(ActiveDriver *driver) : driver(driver) {
@@ -42,9 +44,13 @@ public:
     ostringstream oss;
     oss << "'";
     for (size_t i = 0; i < ids.size(); ++i) {
-      oss << ids[i];
-      if (i < ids.size() - 1)
-        oss << "','";
+      // prevent SQL injection
+      if (RE2::FullMatch(ids[i],
+                         R"(^[A-Za-z0-9\-_.~!#$&'()*+,\/:;=?@\[\]]*$)")) {
+        oss << ids[i];
+        if (i < ids.size() - 1)
+          oss << "','";
+      }
     }
     oss << "'";
 
@@ -110,10 +116,10 @@ public:
     if (ind == i_null) {
       vector<string> result = driver->getChapter(id, extraData, proxy);
 
-      // TODO possibly SQL injection
-      sql << fmt::format(
-          "UPDATE CHAPTER SET URLS = '{}' WHERE ID = {} AND MANGA_ID = {}",
-          fmt::join(result, "|"), id, extraData);
+      sql << fmt::format("UPDATE CHAPTER SET URLS = '{}' WHERE ID = :id AND "
+                         "MANGA_ID = :manga_id",
+                         fmt::join(result, "|")),
+          use(id), use(extraData);
 
       return result;
     } else {
@@ -215,6 +221,7 @@ private:
   string sqlName = "sqlite3";
   connection_pool *pool;
 
+  // TODO use soci type conversion
   Manga *toManga(const row &row, bool showDetails = false) {
     if (showDetails) {
       vector<Category> categories;

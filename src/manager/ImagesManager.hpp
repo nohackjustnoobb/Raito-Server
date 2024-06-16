@@ -20,21 +20,31 @@ struct CaseInsensitiveCompare {
   }
 };
 
+// This class is used to manage the images
 class ImagesManager {
 public:
+  // This should not be called directly.
   void add(string id, cpr::Header headers);
 
+  // This is a setter for the base URL, which will be used to construct the
+  // proxy URL. If not specified, it will used the detected base URL.
   void setBaseUrl(string url);
 
+  // This is a setter for the proxy, which will the proxy for fetching the
+  // images.
   void setProxy(string proxy);
 
+  // This is a setter for the interval between clearing the cache.
   void setInterval(string interval);
 
+  // This should not be called directly.
   void cleaner();
 
+  // Get the full path to the images.
   string getPath(const string &id, const string &genre, const string &dest,
                  const string &baseUrl);
 
+  // Get the image data.
   vector<string> getImage(const string &id, const string &genre,
                           const string &hash, bool asBase64);
 

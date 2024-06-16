@@ -1,8 +1,8 @@
 #include "crow.hpp"
 
-#include "../manager/DriversManager.hpp"
-#include "../manager/ImagesManager.hpp"
-#include "../models/Manga.hpp"
+#include "../manager/driversManager.hpp"
+#include "../manager/imagesManager.hpp"
+#include "../models/manga.hpp"
 #include "../utils/converter.hpp"
 #include "../utils/utils.hpp"
 
@@ -421,6 +421,7 @@ struct AccessGuard {
   }
 };
 
+// Main entry point for crow server
 void startCrowServer(int port, string *_webpageUrl, string *_accessKey) {
   webpageUrl = _webpageUrl;
   accessKey = _accessKey;

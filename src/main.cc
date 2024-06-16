@@ -1,12 +1,12 @@
-#include "manager/DriversManager.hpp"
-#include "manager/ImagesManager.hpp"
+#include "manager/driversManager.hpp"
+#include "manager/imagesManager.hpp"
 #include "utils/utils.hpp"
 
 // Drivers
-#include "drivers/ActiveAdapter/ActiveAdapter.cc"
-#include "drivers/DM5/DM5.hpp"
-#include "drivers/MHG/MHG.hpp"
-#include "drivers/MHR/MHR.hpp"
+#include "drivers/activeAdapter/activeAdapter.cc"
+#include "drivers/dm5/dm5.hpp"
+#include "drivers/mhg/mhg.hpp"
+#include "drivers/mhr/mhr.hpp"
 
 // Backend servers
 #include "server/crow.hpp"
@@ -23,6 +23,7 @@
 #define RAITO_SERVER_VERSION "0.1.0-beta.22"
 #define RAITO_DEFAULT_FRAMEWORK "crow"
 
+// Main entry point
 int main() {
   log("RaitoServer",
       fmt::format("Running at Version {}", RAITO_SERVER_VERSION));

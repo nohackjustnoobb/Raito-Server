@@ -1,5 +1,5 @@
-#include "MHG.hpp"
-#include "../../models/Manga.hpp"
+#include "mhg.hpp"
+#include "../../models/manga.hpp"
 #include "lz-string.hpp"
 #include "utils.cc"
 

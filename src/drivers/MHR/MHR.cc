@@ -1,6 +1,6 @@
 
-#include "MHR.hpp"
-#include "../../models/Manga.hpp"
+#include "mhr.hpp"
+#include "../../models/manga.hpp"
 #include "utils.cc"
 
 #include "md5.h"

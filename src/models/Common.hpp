@@ -3,10 +3,13 @@
 #include <string>
 using namespace std;
 
+// Forward declarations.
+
 class Manga;
 
 class DetailsManga;
 
+// Only used to check if the manga is up to date.
 struct PreviewManga {
   string id;
   string latest;

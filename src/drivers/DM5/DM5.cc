@@ -1,6 +1,5 @@
 
-#include "DM5.hpp"
-#include "../../models/Manga.hpp"
+#include "dm5.hpp"
 
 #include "utils.cc"
 

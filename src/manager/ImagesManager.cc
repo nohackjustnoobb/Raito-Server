@@ -1,4 +1,4 @@
-#include "ImagesManager.hpp"
+#include "imagesManager.hpp"
 #include "../utils/utils.hpp"
 
 #include "crow.h"

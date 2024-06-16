@@ -1,7 +1,7 @@
 #include "drogon.hpp"
 
-#include "../manager/DriversManager.hpp"
-#include "../models/Manga.hpp"
+#include "../manager/driversManager.hpp"
+#include "../models/manga.hpp"
 #include "../utils/converter.hpp"
 #include "../utils/utils.hpp"
 
@@ -392,6 +392,7 @@ auto getImage = [](const HttpRequestPtr &req,
   }
 };
 
+// Main entry point for drogon server
 void startDrogonServer(int port, string *_webpageUrl, string *_accessKey) {
   webpageUrl = _webpageUrl;
   accessKey = _accessKey;

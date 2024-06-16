@@ -1,17 +1,18 @@
+// simplified & traditional is obtained from
+// https://github.com/yang1206/s2t-chinese/blob/main/src/lang/zh.ts
+// Thanks to the original author
+
 #pragma once
 
 #ifndef CONVERTER_HPP
 #define CONVERTER_HPP
-
-// simplified & traditional is obtained from
-// https://github.com/yang1206/s2t-chinese/blob/main/src/lang/zh.ts
-// Thanks to the original author
 
 #include <codecvt>
 #include <locale>
 
 using namespace std;
 
+// An extremely simple converter for traditional Chinese to simplified Chinese
 class Converter {
 
 public:
@@ -30,6 +31,8 @@ public:
     return this->wstringConverter.to_bytes(result);
   }
 
+  // This should not be used, as many traditional characters have the same
+  // simplified characters.
   string toTraditional(const string &text) {
     wstring wide = this->wstringConverter.from_bytes(text);
 

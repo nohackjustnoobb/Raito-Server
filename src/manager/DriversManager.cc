@@ -1,6 +1,6 @@
-#include "DriversManager.hpp"
+#include "driversManager.hpp"
 #include "../utils/utils.hpp"
-#include "ImagesManager.hpp"
+#include "imagesManager.hpp"
 
 #include <algorithm>
 
