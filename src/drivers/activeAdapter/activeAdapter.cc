@@ -88,8 +88,9 @@ public:
 
     vector<Manga *> result;
     // convert it to vector of manga
-    for (auto const &pair : resultMap)
-      result.push_back(pair.second);
+    for (auto const &id : ids)
+      if (resultMap.count(id))
+        result.push_back(resultMap[id]);
 
     return result;
   }
@@ -161,21 +162,16 @@ public:
   vector<Manga *> search(string keyword, int page) override {
     CHECK_ONLINE()
 
-    // TODO use rapidfuzz
-    session sql(*pool);
-    rowset<row> rs =
-        (sql.prepare << fmt::format("SELECT * FROM MANGA WHERE TITLE LIKE '{}' "
-                                    "LIMIT 50 OFFSET :offset",
-                                    "%" + keyword + "%"),
-         use((page - 1) * 50));
+    vector<string> titlesRank = extract(keyword, page * 50);
+    vector<string> resultTitles =
+        titlesRank.size() >= 50
+            ? vector(titlesRank.end() - 50, titlesRank.end())
+            : titlesRank;
+    vector<string> resultId;
+    for (const auto &title : resultTitles)
+      resultId.push_back(titlesWithId[title]);
 
-    vector<Manga *> result;
-    for (auto it = rs.begin(); it != rs.end(); it++) {
-      const row &row = *it;
-      result.push_back(toManga(row));
-    }
-
-    return result;
+    return getManga(resultId, false);
   }
 
   bool checkOnline() override { return this->isOnline; }
@@ -212,6 +208,7 @@ private:
   string parameters;
   string sqlName = "sqlite3";
   connection_pool *pool;
+  map<string, string> titlesWithId;
   vector<string> titles;
 
   // TODO use soci type conversion
@@ -350,9 +347,14 @@ private:
           waitingList.insert(waitingList.begin(), pair.first);
 
         // update the cached titles
-        rowset<string> titlesRs = sql.prepare << "SELECT TITLE FROM MANGA";
+        rowset<row> titlesRs = sql.prepare << "SELECT ID, TITLE FROM MANGA";
         titles.clear();
-        std::copy(titlesRs.begin(), titlesRs.end(), std::back_inserter(titles));
+        titlesWithId.clear();
+        for (auto it = titlesRs.begin(); it != titlesRs.end(); it++) {
+          const row &row = *it;
+          titlesWithId[row.get<string>("TITLE")] = row.get<string>("ID");
+          titles.push_back(row.get<string>("TITLE"));
+        }
 
         // reset counter
         counter = 0;
