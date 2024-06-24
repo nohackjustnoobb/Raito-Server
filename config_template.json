@@ -60,7 +60,7 @@
             // Default: sqlite3
             "sql": "sqlite3",
             // Optional, the parameters of the sql backend
-            // Default: ../data/{SC}.sqlite3
+            // Default: ../data/{id}.sqlite3
             "parameters": "db=id.sqlite3"
         }
     },

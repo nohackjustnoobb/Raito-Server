@@ -21,7 +21,7 @@
 // #include <soci/postgresql/soci-postgresql.h>
 #include <string>
 
-#define RAITO_SERVER_VERSION "0.1.0-beta.25"
+#define RAITO_SERVER_VERSION "0.1.0-beta.26"
 #define RAITO_DEFAULT_FRAMEWORK "crow"
 
 // Main entry point

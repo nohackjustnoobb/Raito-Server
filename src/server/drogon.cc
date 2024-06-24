@@ -51,7 +51,7 @@
     } catch (...) {                                                            \
     }                                                                          \
   }                                                                            \
-  if (driver->id == "SC")                                                      \
+  if (driversManager.cmsId != nullptr && driver->id == *driversManager.cmsId)  \
     proxy = true;
 
 #define GET_PAGE()                                                             \
