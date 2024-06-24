@@ -1,4 +1,5 @@
 // PLEASE REMOVE ALL COMMENTS FROM THE REAL CONFIGURATION FILE
+// Actually, the entire configuration file should be optional
 {
     "server": {
         // Optional, the base url to this server
@@ -18,6 +19,7 @@
         "webpageUrl": "http://example.com/"
     },
     // Optional, if it is set, the users will need the same key to access the server
+    // default: ""
     "accessKey": "exampleKey",
     "driver": {
         // Optional, the ids in the list will be excluded
@@ -39,6 +41,27 @@
                 // Default: ../data/{driverId}.sqlite3
                 "parameters": "db=id.sqlite3"
             }
+        },
+        // Optional, the server can also be used as a CMS which is fully independent
+        "CMS": {
+            // Optional, the main switch to turn on the CMS
+            // Default: false
+            "enabled": false,
+            // Optional, the id of the driver it must be unique
+            // Default: "SC"
+            "id": "SC",
+            // Optional, the access key for the admin interface
+            // Default: "" 
+            "accessKey": "exampleKey",
+            // Optional, Allow only the local ip address
+            // Default: true
+            "allowOnlyLocal": true,
+            // Optional, the sql backend to use
+            // Default: sqlite3
+            "sql": "sqlite3",
+            // Optional, the parameters of the sql backend
+            // Default: ../data/{SC}.sqlite3
+            "parameters": "db=id.sqlite3"
         }
     },
     "image": {

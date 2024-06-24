@@ -1,5 +1,6 @@
 #include "crow.hpp"
 
+#include "../drivers/selfContained/selfContained.hpp"
 #include "../manager/driversManager.hpp"
 #include "../manager/imagesManager.hpp"
 #include "../models/manga.hpp"
@@ -13,6 +14,9 @@
 
 #define GET_DRIVER()                                                           \
   char *driverId = req.url_params.get("driver");                               \
+  if (driversManager.cmsId != nullptr &&                                       \
+      RE2::FullMatch(req.raw_url, R"(^\/admin.*$)"))                           \
+    driverId = (char *)driversManager.cmsId->c_str();                          \
   if (driverId == nullptr)                                                     \
     return crow::response(400, "json",                                         \
                           R"({"error":"\"driver\" is missing."})");            \
@@ -34,7 +38,9 @@
       proxy = std::atoi(tryProxy) == 1;                                        \
     } catch (...) {                                                            \
     }                                                                          \
-  }
+  }                                                                            \
+  if (driver->id == "SC")                                                      \
+    proxy = true;
 
 #define GET_PAGE()                                                             \
   int page = 1;                                                                \
@@ -57,6 +63,8 @@
 namespace crowServer {
 string *webpageUrl;
 string *accessKey;
+string *adminAccessKey;
+bool adminAllowOnlyLocal;
 string serverVersion;
 Converter converter;
 }; // namespace crowServer
@@ -371,12 +379,220 @@ crow::response getImage(const crow::request &req, string id, string genre,
   }
 }
 
+crow::response createOrEditManga(const crow::request &req) {
+  try {
+    // Parse the body
+    json body = json::parse(req.body);
+    DetailsManga *manga = DetailsManga::fromJson(body);
+
+    // Create the manga
+    SelfContained *driver =
+        (SelfContained *)driversManager.get(*driversManager.cmsId);
+
+    Manga *result;
+    if (req.method == crow::HTTPMethod::POST)
+      result = driver->createManga(manga);
+    else
+      result = driver->editManga(manga);
+
+    // Get the created manga
+    return crow::response(200, "json", result->toJson().dump());
+  } catch (...) {
+    return crow::response(
+        400, "json",
+        R"({"error": "An unexpected error occurred when trying to create/edit manga."})");
+  }
+}
+
+crow::response deleteManga(const crow::request &req) {
+  try {
+    char *tryId = req.url_params.get("id");
+    if (tryId == nullptr)
+      return crow::response(400, "json", R"({"error":"\"id\" is missing."})");
+
+    SelfContained *driver =
+        (SelfContained *)driversManager.get(*driversManager.cmsId);
+
+    driver->deleteManga(string(tryId));
+
+    return crow::response(204);
+  } catch (...) {
+    return crow::response(
+        400, "json",
+        R"({"error": "An unexpected error occurred when trying to delete manga."})");
+  }
+}
+
+crow::response createChapter(const crow::request &req) {
+  try {
+    // Parse the body
+    json body = json::parse(req.body);
+
+    string keys[] = {"extraData", "title", "isExtra"};
+    for (const auto &key : keys) {
+      if (!body.contains(key)) {
+        return crow::response(400, "json",
+                              R"({"error":"\")" + key + R"(\" is missing."})");
+      }
+    }
+
+    SelfContained *driver =
+        (SelfContained *)driversManager.get(*driversManager.cmsId);
+    Chapters result = driver->createChapter(body["extraData"].get<string>(),
+                                            body["title"].get<string>(),
+                                            body["isExtra"].get<bool>());
+
+    return crow::response("json", result.toJson().dump());
+  } catch (...) {
+
+    return crow::response(
+        400, "json",
+        R"({"error": "An unexpected error occurred when trying to create chapter."})");
+  }
+}
+
+crow::response editChapters(const crow::request &req) {
+  try {
+    // Parse the body
+    json body = json::parse(req.body);
+    Chapters chapters = Chapters::fromJson(body);
+
+    // Create the manga
+    SelfContained *driver =
+        (SelfContained *)driversManager.get(*driversManager.cmsId);
+    Chapters result = driver->editChapters(chapters);
+
+    // Get the created manga
+    return crow::response(200, "json", result.toJson().dump());
+  } catch (...) {
+    return crow::response(
+        400, "json",
+        R"({"error": "An unexpected error occurred when trying to edit chapters."})");
+  }
+}
+
+crow::response deleteChapter(const crow::request &req) {
+  try {
+    char *tryId = req.url_params.get("id");
+    if (tryId == nullptr)
+      return crow::response(400, "json", R"({"error":"\"id\" is missing."})");
+
+    char *tryExtraData = req.url_params.get("extra-data");
+    if (tryExtraData == nullptr)
+      return crow::response(400, "json",
+                            R"({"error":"\"extra-data\" is missing."})");
+
+    SelfContained *driver =
+        (SelfContained *)driversManager.get(*driversManager.cmsId);
+
+    driver->deleteChapter(string(tryId), string(tryExtraData));
+
+    return crow::response(204);
+  } catch (...) {
+    return crow::response(
+        400, "json",
+        R"({"error": "An unexpected error occurred when trying to delete chapter."})");
+  }
+}
+
+crow::response uploadImage(const crow::request &req) {
+  try {
+    char *tryId = req.url_params.get("id");
+    if (tryId == nullptr)
+      return crow::response(400, "json", R"({"error":"\"id\" is missing."})");
+    string id = string(tryId);
+
+    char *tryExtraData = req.url_params.get("extra-data");
+
+    string image = req.body;
+    if (req.get_header_value("Content-Type") == "text/plain")
+      image = crow::utility::base64decode(image);
+
+    SelfContained *driver =
+        (SelfContained *)driversManager.get(*driversManager.cmsId);
+    vector<string> result =
+        tryExtraData == nullptr
+            ? driver->uploadThumbnail(id, image)
+            : driver->uploadMangaImage(id, string(tryExtraData), image);
+
+    return crow::response(result.at(0), result.at(1));
+  } catch (...) {
+    return crow::response(
+        400, "json",
+        R"({"error": "An unexpected error occurred when trying to upload image."})");
+  }
+}
+
+crow::response arrangeMangaImage(const crow::request &req) {
+  try {
+    char *tryId = req.url_params.get("id");
+    if (tryId == nullptr)
+      return crow::response(400, "json", R"({"error":"\"id\" is missing."})");
+
+    char *tryExtraData = req.url_params.get("extra-data");
+    if (tryExtraData == nullptr)
+      return crow::response(400, "json",
+                            R"({"error":"\"extra-data\" is missing."})");
+
+    string baseUrl;
+    string host = req.get_header_value("host");
+    if (!host.empty())
+      baseUrl =
+          fmt::format("{}://{}/", isLocalIp(host) ? "http" : "https", host);
+
+    vector<string> urls = json::parse(req.body);
+
+    SelfContained *driver =
+        (SelfContained *)driversManager.get(*driversManager.cmsId);
+    urls = driver->arrangeMangaImage(string(tryId), string(tryExtraData), urls);
+
+    json result = json::array();
+    for (const string &url : urls)
+      result.push_back(driver->useProxy(url, "manga", baseUrl));
+
+    // Get the created manga
+    return crow::response(200, "json", result.dump());
+  } catch (...) {
+    return crow::response(
+        400, "json",
+        R"({"error": "An unexpected error occurred when trying to arrange image."})");
+  }
+}
+
+crow::response deleteMangaImage(const crow::request &req) {
+  try {
+    char *tryId = req.url_params.get("id");
+    if (tryId == nullptr)
+      return crow::response(400, "json", R"({"error":"\"id\" is missing."})");
+
+    char *tryExtraData = req.url_params.get("extra-data");
+    if (tryExtraData == nullptr)
+      return crow::response(400, "json",
+                            R"({"error":"\"extra-data\" is missing."})");
+
+    char *tryHash = req.url_params.get("hash");
+    if (tryHash == nullptr)
+      return crow::response(400, "json", R"({"error":"\"hash\" is missing."})");
+
+    SelfContained *driver =
+        (SelfContained *)driversManager.get(*driversManager.cmsId);
+
+    driver->deleteMangaImage(string(tryId), string(tryExtraData),
+                             string(tryHash));
+
+    return crow::response(204);
+  } catch (...) {
+    return crow::response(
+        400, "json",
+        R"({"error": "An unexpected error occurred when trying to delete image."})");
+  }
+}
+
 struct AccessGuard {
   struct context {};
 
   void before_handle(crow::request &req, crow::response &res,
                      context & /*ctx*/) {
-
     stringstream ss;
     ss << &req;
 
@@ -391,15 +607,32 @@ struct AccessGuard {
          {"path", req.url}},
         fmt::color::light_golden_rod_yellow);
 
-    if (accessKey != nullptr &&
-        !(req.method == crow::HTTPMethod::OPTIONS ||
-          req.get_header_value("Access-Key") == *accessKey ||
-          (RE2::FullMatch(req.raw_url, R"(^\/(image|share).*$)")))) {
-      res.write(R"({"error":"\"Access-Key\" is not found or matched."})");
-      res.add_header("Content-Type", "application/json");
-      res.code = 403;
-      res.end();
-    }
+    // Allow if it is OPTIONS
+    if (req.method == crow::HTTPMethod::OPTIONS)
+      return;
+
+    // Allow if it is image or share
+    if (RE2::FullMatch(req.raw_url, R"(^\/(image|share).*$)"))
+      return;
+
+    // Check if it is admin panel
+    bool isAdminPanel = RE2::FullMatch(req.raw_url, R"(^\/admin.*$)");
+
+    if (isAdminPanel && (!adminAllowOnlyLocal || isLocalIp(ip)) &&
+        (adminAccessKey == nullptr ||
+         req.get_header_value("Access-Key") == *adminAccessKey))
+      return;
+
+    // Other requests
+    if (!isAdminPanel && (accessKey == nullptr ||
+                          req.get_header_value("Access-Key") == *accessKey))
+      return;
+
+    // If not matching any of the above conditions
+    res.write(R"({"error": "No Permission."})");
+    res.add_header("Content-Type", "application/json");
+    res.code = 403;
+    res.end();
   }
 
   void after_handle(crow::request &req, crow::response &res,
@@ -421,10 +654,12 @@ struct AccessGuard {
   }
 };
 
-// Main entry point for crow server
-void startCrowServer(int port, string *_webpageUrl, string *_accessKey) {
+void startCrowServer(int port, string *_webpageUrl, string *_accessKey,
+                     string *_adminAccessKey, bool _adminAllowOnlyLocal) {
   webpageUrl = _webpageUrl;
   accessKey = _accessKey;
+  adminAccessKey = _adminAccessKey;
+  adminAllowOnlyLocal = _adminAllowOnlyLocal;
   serverVersion = string(getenv("RAITO_SERVER_VERSION"));
   serverVersion += " (Crow)";
 
@@ -449,6 +684,35 @@ void startCrowServer(int port, string *_webpageUrl, string *_accessKey) {
 
   CROW_ROUTE(app, "/share")(getShare);
   CROW_ROUTE(app, "/image/<string>/<string>/<string>")(getImage);
+
+  // Admin panel
+  CROW_ROUTE(app, "/admin")(getDriverInfo);
+  CROW_ROUTE(app, "/admin/list")(getList);
+  CROW_ROUTE(app, "/admin/manga")
+      .methods(crow::HTTPMethod::GET, crow::HTTPMethod::POST)(getManga);
+  CROW_ROUTE(app, "/admin/chapter")(getChapter);
+  CROW_ROUTE(app, "/admin/suggestion")(getSuggestion);
+  CROW_ROUTE(app, "/admin/search")(getSearch);
+  // Editor
+  CROW_ROUTE(app, "/admin/manga/edit")
+      .methods(crow::HTTPMethod::POST,
+               crow::HTTPMethod::PUT)(createOrEditManga);
+  CROW_ROUTE(app, "/admin/manga/edit")
+      .methods(crow::HTTPMethod::DELETE)(deleteManga);
+
+  CROW_ROUTE(app, "/admin/chapters/edit")
+      .methods(crow::HTTPMethod::POST)(createChapter);
+  CROW_ROUTE(app, "/admin/chapters/edit")
+      .methods(crow::HTTPMethod::PUT)(editChapters);
+  CROW_ROUTE(app, "/admin/chapters/edit")
+      .methods(crow::HTTPMethod::Delete)(deleteChapter);
+
+  CROW_ROUTE(app, "/admin/image/edit")
+      .methods(crow::HTTPMethod::POST)(uploadImage);
+  CROW_ROUTE(app, "/admin/image/edit")
+      .methods(crow::HTTPMethod::PUT)(arrangeMangaImage);
+  CROW_ROUTE(app, "/admin/image/edit")
+      .methods(crow::HTTPMethod::DELETE)(deleteMangaImage);
 
   log("Crow", fmt::format("Listening on Port {}", port));
   app.port(port).multithreaded().run();

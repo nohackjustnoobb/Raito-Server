@@ -7,6 +7,7 @@
 #include "drivers/dm5/dm5.hpp"
 #include "drivers/mhg/mhg.hpp"
 #include "drivers/mhr/mhr.hpp"
+#include "drivers/selfContained/selfContained.hpp"
 
 // Backend servers
 #include "server/crow.hpp"
@@ -20,7 +21,7 @@
 // #include <soci/postgresql/soci-postgresql.h>
 #include <string>
 
-#define RAITO_SERVER_VERSION "0.1.0-beta.24"
+#define RAITO_SERVER_VERSION "0.1.0-beta.25"
 #define RAITO_DEFAULT_FRAMEWORK "crow"
 
 // Main entry point
@@ -31,6 +32,8 @@ int main() {
 
   string *webpageUrl = nullptr;
   string *accessKey = nullptr;
+  string *adminAccessKey = nullptr;
+  bool adminAllowOnlyLocal = true;
   string framework = RAITO_DEFAULT_FRAMEWORK;
   int port = 8000;
 
@@ -127,9 +130,25 @@ int main() {
       if (image.contains("clearCaches"))
         imagesManager.setInterval(image["clearCaches"].get<string>());
     }
+
+    if (config.contains("CMS")) {
+      json cms = config["CMS"];
+      if (cms.contains("enabled") && cms["enabled"].get<bool>()) {
+        BaseDriver *driver = new SelfContained();
+        driver->applyConfig(cms);
+        driversManager.add(driver);
+        driversManager.cmsId = new string(driver->id);
+
+        if (cms.contains("accessKey"))
+          adminAccessKey = new string(cms["accessKey"].get<string>());
+
+        if (cms.contains("allowOnlyLocal"))
+          adminAllowOnlyLocal = cms["allowOnlyLocal"].get<bool>();
+      }
+    }
   };
 
-  // read the configuration file
+  // Read the configuration file
   ifstream ifs("../config.json");
   if (ifs.is_open()) {
     json config;
@@ -142,19 +161,23 @@ int main() {
     for (const auto &driver : drivers)
       driversManager.add(driver);
   }
-  driversManager.isReady = true;
 
-  // server initialization
+  // Initialize all the libraries
   FreeImage_Initialise();
   soci::register_factory_sqlite3();
-  // TODO dont know why this is not working
+  // FIXME dont know why this is not working
   // soci::register_factory_mysql();
   // soci::register_factory_postgresql();
 
+  // All libraries are initialized
+  driversManager.isReady = true;
+
   if (framework == "drogon")
-    startDrogonServer(port, webpageUrl, accessKey);
+    startDrogonServer(port, webpageUrl, accessKey, adminAccessKey,
+                      adminAllowOnlyLocal);
   else
-    startCrowServer(port, webpageUrl, accessKey);
+    startCrowServer(port, webpageUrl, accessKey, adminAccessKey,
+                    adminAllowOnlyLocal);
 
   FreeImage_DeInitialise();
 

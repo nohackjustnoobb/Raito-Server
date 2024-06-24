@@ -1,5 +1,6 @@
 #include "drogon.hpp"
 
+#include "../drivers/selfContained/selfContained.hpp"
 #include "../manager/driversManager.hpp"
 #include "../models/manga.hpp"
 #include "../utils/converter.hpp"
@@ -7,6 +8,7 @@
 
 #include "crow.h"
 #include <drogon/drogon.h>
+#include <fmt/format.h>
 #include <nlohmann/json.hpp>
 
 #define JSON_RESPONSE_WITH_CODE(str, code)                                     \
@@ -24,6 +26,9 @@
 
 #define GET_DRIVER()                                                           \
   string driverId = req->getParameter("driver");                               \
+  if (driversManager.cmsId != nullptr &&                                       \
+      RE2::FullMatch(req->path(), R"(^\/admin.*$)"))                           \
+    driverId = *driversManager.cmsId;                                          \
   if (driverId == "") {                                                        \
     JSON_404_RESPONSE(R"({"error":"\"driver\" is missing."})")                 \
   }                                                                            \
@@ -45,7 +50,9 @@
       proxy = std::stoi(tryProxy) == 1;                                        \
     } catch (...) {                                                            \
     }                                                                          \
-  }
+  }                                                                            \
+  if (driver->id == "SC")                                                      \
+    proxy = true;
 
 #define GET_PAGE()                                                             \
   int page = 1;                                                                \
@@ -68,6 +75,8 @@
 namespace drogonServer {
 string *webpageUrl;
 string *accessKey;
+string *adminAccessKey;
+bool adminAllowOnlyLocal;
 string serverVersion;
 Converter converter;
 } // namespace drogonServer
@@ -260,10 +269,7 @@ auto getChapter = [](const HttpRequestPtr &req,
 
   GET_PROXY()
 
-  string extraData;
-  string tryExtraData = req->getParameter("extra-data");
-  if (tryExtraData != "")
-    extraData = tryExtraData;
+  string extraData = req->getParameter("extra-data");
 
   try {
     vector<string> urls = driver->getChapter(id, extraData);
@@ -392,10 +398,231 @@ auto getImage = [](const HttpRequestPtr &req,
   }
 };
 
-// Main entry point for drogon server
-void startDrogonServer(int port, string *_webpageUrl, string *_accessKey) {
+auto createOrEditManga = [](const HttpRequestPtr &req,
+                            function<void(const HttpResponsePtr &)>
+                                &&callback) {
+  try {
+    // Parse the body
+    json body = json::parse(req->getBody());
+    DetailsManga *manga = DetailsManga::fromJson(body);
+
+    SelfContained *driver =
+        (SelfContained *)driversManager.get(*driversManager.cmsId);
+
+    Manga *result;
+    if (req->getMethod() == Post)
+      result = driver->createManga(manga);
+    else
+      result = driver->editManga(manga);
+
+    JSON_RESPONSE(result->toJson().dump());
+  } catch (...) {
+    JSON_400_RESPONSE(
+        R"({"error": "An unexpected error occurred when trying to create/edit manga."})")
+  }
+};
+
+auto deleteManga = [](const HttpRequestPtr &req,
+                      function<void(const HttpResponsePtr &)> &&callback) {
+  try {
+    string id = req->getParameter("id");
+    if (id == "") {
+      JSON_400_RESPONSE(R"({"error":"\"id\" is missing."})")
+    }
+
+    SelfContained *driver =
+        (SelfContained *)driversManager.get(*driversManager.cmsId);
+
+    driver->deleteManga(id);
+
+    HttpResponsePtr resp = HttpResponse::newHttpResponse();
+    resp->setStatusCode(k204NoContent);
+
+    return callback(resp);
+  } catch (...) {
+    JSON_400_RESPONSE(
+        R"({"error": "An unexpected error occurred when trying to delete manga."})")
+  }
+};
+
+auto createChapter = [](const HttpRequestPtr &req,
+                        function<void(const HttpResponsePtr &)> &&callback) {
+  try {
+    // Parse the body
+    json body = json::parse(req->getBody());
+
+    string keys[] = {"extraData", "title", "isExtra"};
+    for (const auto &key : keys) {
+      if (!body.contains(key)) {
+        JSON_400_RESPONSE(R"({"error":"\")" + key + R"(\" is missing."})");
+      }
+    }
+
+    SelfContained *driver =
+        (SelfContained *)driversManager.get(*driversManager.cmsId);
+    Chapters result = driver->createChapter(body["extraData"].get<string>(),
+                                            body["title"].get<string>(),
+                                            body["isExtra"].get<bool>());
+
+    JSON_RESPONSE(result.toJson().dump());
+  } catch (...) {
+    JSON_400_RESPONSE(
+        R"({"error": "An unexpected error occurred when trying to create chapter."})")
+  }
+};
+
+auto editChapters = [](const HttpRequestPtr &req,
+                       function<void(const HttpResponsePtr &)> &&callback) {
+  try {
+    // Parse the body
+    json body = json::parse(req->getBody());
+    Chapters chapters = Chapters::fromJson(body);
+
+    SelfContained *driver =
+        (SelfContained *)driversManager.get(*driversManager.cmsId);
+    Chapters result = driver->editChapters(chapters);
+
+    JSON_RESPONSE(result.toJson().dump());
+  } catch (...) {
+    JSON_400_RESPONSE(
+        R"({"error": "An unexpected error occurred when trying to edit chapters."})")
+  }
+};
+
+auto deleteChapter = [](const HttpRequestPtr &req,
+                        function<void(const HttpResponsePtr &)> &&callback) {
+  try {
+    string id = req->getParameter("id");
+    if (id == "") {
+      JSON_400_RESPONSE(R"({"error":"\"id\" is missing."})")
+    }
+
+    string extraData = req->getParameter("extra-data");
+    if (extraData == "") {
+      JSON_400_RESPONSE(R"({"error":"\"extra-data\" is missing."})")
+    }
+
+    SelfContained *driver =
+        (SelfContained *)driversManager.get(*driversManager.cmsId);
+
+    driver->deleteChapter(id, extraData);
+
+    HttpResponsePtr resp = HttpResponse::newHttpResponse();
+    resp->setStatusCode(k204NoContent);
+
+    return callback(resp);
+  } catch (...) {
+    JSON_400_RESPONSE(
+        R"({"error": "An unexpected error occurred when trying to delete chapter."})")
+  }
+};
+
+auto uploadImage = [](const HttpRequestPtr &req,
+                      function<void(const HttpResponsePtr &)> &&callback) {
+  try {
+    string id = req->getParameter("id");
+    if (id == "") {
+      JSON_400_RESPONSE(R"({"error":"\"id\" is missing."})")
+    }
+    string extraData = req->getParameter("extra-data");
+
+    string image = string(req->bodyData(), req->bodyLength());
+    if (req->getHeader("Content-Type") == "text/plain")
+      image = crow::utility::base64decode(image);
+
+    SelfContained *driver =
+        (SelfContained *)driversManager.get(*driversManager.cmsId);
+    vector<string> result =
+        extraData == "" ? driver->uploadThumbnail(id, image)
+                        : driver->uploadMangaImage(id, extraData, image);
+
+    HttpResponsePtr resp = HttpResponse::newHttpResponse();
+    resp->setContentTypeString(crow::mime_types.at(result[0]));
+    resp->setBody(result[1]);
+
+    return callback(resp);
+  } catch (...) {
+    JSON_400_RESPONSE(
+        R"({"error": "An unexpected error occurred when trying to upload image."})")
+  }
+};
+
+auto arrangeMangaImage = [](const HttpRequestPtr &req,
+                            function<void(const HttpResponsePtr &)>
+                                &&callback) {
+  try {
+    string id = req->getParameter("id");
+    if (id == "") {
+      JSON_400_RESPONSE(R"({"error":"\"id\" is missing."})")
+    }
+
+    string extraData = req->getParameter("extra-data");
+    if (extraData == "") {
+      JSON_400_RESPONSE(R"({"error":"\"extra-data\" is missing."})")
+    }
+
+    string baseUrl;
+    string host = req->getHeader("host");
+    if (!host.empty())
+      baseUrl =
+          fmt::format("{}://{}/", isLocalIp(host) ? "http" : "https", host);
+
+    vector<string> urls = json::parse(req->getBody());
+
+    SelfContained *driver =
+        (SelfContained *)driversManager.get(*driversManager.cmsId);
+    urls = driver->arrangeMangaImage(id, extraData, urls);
+
+    json result = json::array();
+    for (const string &url : urls)
+      result.push_back(driver->useProxy(url, "manga", baseUrl));
+
+    JSON_RESPONSE(result.dump())
+  } catch (...) {
+    JSON_400_RESPONSE(
+        R"({"error": "An unexpected error occurred when trying to arrange image."})")
+  }
+};
+
+auto deleteMangaImage = [](const HttpRequestPtr &req,
+                           function<void(const HttpResponsePtr &)> &&callback) {
+  try {
+    string id = req->getParameter("id");
+    if (id == "") {
+      JSON_400_RESPONSE(R"({"error":"\"id\" is missing."})")
+    }
+
+    string extraData = req->getParameter("extra-data");
+    if (extraData == "") {
+      JSON_400_RESPONSE(R"({"error":"\"extra-data\" is missing."})")
+    }
+
+    string hash = req->getParameter("hash");
+    if (hash == "") {
+      JSON_400_RESPONSE(R"({"error":"\"hash\" is missing."})")
+    }
+
+    SelfContained *driver =
+        (SelfContained *)driversManager.get(*driversManager.cmsId);
+
+    driver->deleteMangaImage(id, extraData, hash);
+
+    HttpResponsePtr resp = HttpResponse::newHttpResponse();
+    resp->setStatusCode(k204NoContent);
+
+    return callback(resp);
+  } catch (...) {
+    JSON_400_RESPONSE(
+        R"({"error": "An unexpected error occurred when trying to delete image."})")
+  }
+};
+
+void startDrogonServer(int port, string *_webpageUrl, string *_accessKey,
+                       string *_adminAccessKey, bool _adminAllowOnlyLocal) {
   webpageUrl = _webpageUrl;
   accessKey = _accessKey;
+  adminAccessKey = _adminAccessKey;
+  adminAllowOnlyLocal = _adminAllowOnlyLocal;
   serverVersion = string(getenv("RAITO_SERVER_VERSION"));
   serverVersion += " (Drogon)";
 
@@ -441,19 +668,29 @@ void startDrogonServer(int port, string *_webpageUrl, string *_accessKey) {
   app().registerPreHandlingAdvice([](const HttpRequestPtr &req,
                                      AdviceCallback &&callback,
                                      AdviceChainCallback &&chainCallback) {
-    if (accessKey != nullptr &&
-        !(req->getHeader("Access-Key") == *accessKey ||
-          (RE2::FullMatch(req->path(), R"(^\/(image|share).*$)")))) {
+    string ip = req->getHeader("X-Real-IP");
+    if (ip == "")
+      ip = req->getPeerAddr().toIp();
 
-      HttpResponsePtr resp = HttpResponse::newHttpResponse();
-      resp->setBody(R"({"error":"\"Access-Key\" is not found or matched."})");
-      resp->setContentTypeCode(CT_APPLICATION_JSON);
-      resp->setStatusCode(k403Forbidden);
+    // Check if it is admin panel
+    bool isAdminPanel = RE2::FullMatch(req->path(), R"(^\/admin.*$)");
 
-      return callback(resp);
-    }
+    if (isAdminPanel && (!adminAllowOnlyLocal || isLocalIp(ip)) &&
+        (adminAccessKey == nullptr ||
+         req->getHeader("Access-Key") == *adminAccessKey))
+      return chainCallback();
 
-    chainCallback();
+    // Other requests
+    if (!isAdminPanel &&
+        (accessKey == nullptr || req->getHeader("Access-Key") == *accessKey))
+      return chainCallback();
+
+    // If not matching any of the above conditions
+    HttpResponsePtr resp = HttpResponse::newHttpResponse();
+    resp->setBody(R"({"error": "No Permission."})");
+    resp->setContentTypeCode(CT_APPLICATION_JSON);
+    resp->setStatusCode(k403Forbidden);
+    callback(resp);
   });
 
   // register handlers
@@ -470,6 +707,32 @@ void startDrogonServer(int port, string *_webpageUrl, string *_accessKey) {
   app().registerHandler("/share", getShare, {Get, Options});
   app().registerHandler("/image/{1}/{2}/{3}", getImage, {Get, Options});
 
+  // Admin panel
+  app().registerHandler("/admin", getDriverInfo, {Get, Options});
+  app().registerHandler("/admin/list", getList, {Get, Options});
+  app().registerHandler("/admin/manga", getManga, {Get, Post, Options});
+  app().registerHandler("/admin/chapter", getChapter, {Get, Options});
+  app().registerHandler("/admin/suggestion", getSuggestion, {Get, Options});
+  app().registerHandler("/admin/search", getSearch, {Get, Options});
+  // Editor
+  app().registerHandler("/admin/manga/edit", createOrEditManga,
+                        {Post, Put, Options});
+  app().registerHandler("/admin/manga/edit", deleteManga, {Delete, Options});
+
+  app().registerHandler("/admin/chapters/edit", createChapter, {Post, Options});
+  app().registerHandler("/admin/chapters/edit", editChapters, {Put, Options});
+  app().registerHandler("/admin/chapters/edit", deleteChapter,
+                        {Delete, Options});
+
+  app().registerHandler("/admin/image/edit", uploadImage, {Post, Options});
+  app().registerHandler("/admin/image/edit", arrangeMangaImage, {Put, Options});
+  app().registerHandler("/admin/image/edit", deleteMangaImage,
+                        {Delete, Options});
+
   log("Drogon", fmt::format("Listening on Port {}", port));
-  app().setThreadNum(0).addListener("0.0.0.0", port).run();
+  app()
+      .setClientMaxBodySize(1024 * 1024 * 1024)
+      .setThreadNum(0)
+      .addListener("0.0.0.0", port)
+      .run();
 }

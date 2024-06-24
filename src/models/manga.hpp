@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../manager/driversManager.hpp"
 #include "../utils/utils.hpp"
 #include "baseDriver.hpp"
 #include "common.hpp"
@@ -39,6 +40,23 @@ struct Chapters {
     result["extraData"] = extraData;
 
     return result;
+  }
+
+  static Chapters fromJson(const json &data) {
+    Chapters chapters;
+    chapters.extraData = data["extraData"].get<string>();
+    chapters.serial = {};
+    chapters.extra = {};
+
+    for (const auto &chapter : data["serial"])
+      chapters.serial.push_back(
+          {chapter["title"].get<string>(), chapter["id"].get<string>()});
+
+    for (const auto &chapter : data["extra"])
+      chapters.extra.push_back(
+          {chapter["title"].get<string>(), chapter["id"].get<string>()});
+
+    return chapters;
   }
 };
 
@@ -104,6 +122,11 @@ public:
         description(description), categories(categories), chapters(chapters),
         updateTime(updateTime) {}
 
+  ~DetailsManga() {
+    if (updateTime != nullptr)
+      delete updateTime;
+  }
+
   // Convert the manga object into json object
   json toJson() override {
     json result;
@@ -130,5 +153,22 @@ public:
       result["updateTime"] = nullptr;
 
     return result;
+  }
+
+  static DetailsManga *fromJson(const json &data) {
+    vector<Category> categories;
+    for (string category : data["categories"])
+      categories.push_back(stringToCategory(category));
+
+    int *updateTime;
+    if (data.contains("updateTime"))
+      updateTime = new int(data["updateTime"].get<int>());
+
+    return new DetailsManga(
+        driversManager.get(data["driver"]), data["id"].get<string>(),
+        data["title"].get<string>(), data["thumbnail"].get<string>(),
+        data["latest"].get<string>(), data["authors"].get<vector<string>>(),
+        data["isEnded"].get<bool>(), data["description"].get<string>(),
+        categories, Chapters::fromJson(data["chapters"]), updateTime);
   }
 };

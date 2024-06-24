@@ -40,13 +40,23 @@ public:
   // This should not be called directly.
   void cleaner();
 
-  // Get the full path to the images.
+  // Get the full path to the image.
   string getPath(const string &id, const string &genre, const string &dest,
                  const string &baseUrl);
+
+  // Get the full path to a local image.
+  string getLocalPath(const string &id, const string &genre, const string &dest,
+                      const string &baseUrl);
 
   // Get the image data.
   vector<string> getImage(const string &id, const string &genre,
                           const string &hash, bool asBase64);
+
+  // Save a image to the local storage
+  string saveImage(const string &id, const string &genre, const string &image);
+
+  // Remove the image from the local storage
+  void deleteImage(const string &id, const string &genre, const string &hash);
 
 private:
   map<string, cpr::Header, CaseInsensitiveCompare> settings;

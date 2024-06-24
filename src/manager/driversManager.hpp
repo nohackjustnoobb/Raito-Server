@@ -9,6 +9,8 @@ class DriversManager {
 public:
   // Determine if the drivers should be started.
   bool isReady = false;
+  // The id of the CMS driver
+  string *cmsId;
 
   // Add the driver to the manager.
   void add(BaseDriver *driver);

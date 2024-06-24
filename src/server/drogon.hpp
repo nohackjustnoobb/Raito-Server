@@ -4,4 +4,6 @@
 
 using namespace std;
 
-void startDrogonServer(int port, string *_webpageUrl, string *_accessKey);
+// Main entry point for drogon server
+void startDrogonServer(int port, string *_webpageUrl, string *_accessKey,
+                       string *_adminAccessKey, bool _adminAllowOnlyLocal);

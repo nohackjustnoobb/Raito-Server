@@ -33,7 +33,6 @@ public:
     supportedCategories = driver->supportedCategories;
     version = driver->version;
     supportSuggestion = true;
-    parameters = filesystem::absolute("../data/" + id + ".sqlite3");
 
     // start a thread
     thread(&ActiveAdapter::mainLoop, this).detach();
@@ -266,6 +265,9 @@ private:
     try {
       int poolSize = thread::hardware_concurrency();
       pool = new connection_pool(poolSize);
+
+      if (parameters == "")
+        parameters = filesystem::absolute("../data/" + id + ".sqlite3");
 
       for (size_t i = 0; i != poolSize; ++i) {
         session &sql = pool->at(i);

@@ -4,4 +4,6 @@
 
 using namespace std;
 
-void startCrowServer(int port, string *_webpageUrl, string *_accessKey);
+// Main entry point for crow server
+void startCrowServer(int port, string *_webpageUrl, string *_accessKey,
+                     string *_adminAccessKey, bool _adminAllowOnlyLocal);
