@@ -26,4 +26,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: nohackjustnoobb/raito-server-cpp:latest
+          tags: nohackjustnoobb/raito-server:latest
