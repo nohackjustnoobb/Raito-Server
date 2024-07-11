@@ -90,8 +90,12 @@ vector<string> SelfContained::getChapter(string id, string extraData) {
 
   session sql(*pool);
   string urls;
+  indicator ind;
   sql << "SELECT URLS FROM CHAPTER WHERE ID = :id AND MANGA_ID = :manga_id",
-      into(urls), use(id), use(extraData);
+      into(urls, ind), use(id), use(extraData);
+
+  if (ind == i_null)
+    return {};
 
   return split(urls, R"(\|)");
 }
@@ -221,6 +225,21 @@ void SelfContained::deleteManga(string id) {
   CHECK_ONLINE()
 
   session sql(*pool);
+
+  // Delete chapters
+  rowset<row> rs =
+      (sql.prepare << "SELECT ID FROM CHAPTER WHERE MANGA_ID = :id", use(id));
+
+  vector<string> ids;
+  for (auto it = rs.begin(); it != rs.end(); it++) {
+    const row &row = *it;
+    ids.push_back(row.get<string>("ID"));
+  }
+
+  for (const auto &chapterId : ids)
+    deleteChapter(chapterId, id);
+
+  // Delete manga
   sql << "DELETE FROM MANGA WHERE ID = :id", use(id);
 }
 
@@ -300,10 +319,12 @@ void SelfContained::deleteChapter(string id, string extraData) {
 
   // delete the image first
   string urls;
+  indicator ind;
   sql << "SELECT URLS FROM CHAPTER WHERE MANGA_ID = :extra_data AND ID = :id",
-      use(extraData), use(id), into(urls);
-  for (const auto &hash : split(urls, R"(\|)"))
-    imagesManager.deleteImage(this->id, "manga", hash);
+      use(extraData), use(id), into(urls, ind);
+  if (ind != i_null)
+    for (const auto &hash : split(urls, R"(\|)"))
+      imagesManager.deleteImage(this->id, "manga", hash);
 
   sql << "DELETE FROM CHAPTER WHERE MANGA_ID = :extra_data AND ID = :id",
       use(extraData), use(id);
@@ -362,6 +383,41 @@ vector<string> SelfContained::uploadMangaImage(string id, string extraData,
   return imagesManager.getImage(this->id, "manga", manga, false);
 }
 
+vector<string> SelfContained::uploadMangaImages(string id, string extraData,
+                                                vector<string> images) {
+  CHECK_ONLINE()
+
+  vector<string> newUrls;
+  for (const auto &image : images)
+    newUrls.push_back(imagesManager.saveImage(this->id, "manga", image));
+
+  session sql(*pool);
+
+  // get the previous urls
+  string urls;
+  indicator ind;
+  sql << "SELECT URLS FROM CHAPTER WHERE MANGA_ID = :extra_data AND ID = :id",
+      use(extraData), use(id), into(urls, ind);
+
+  if (ind != i_null && !urls.empty())
+    urls += "|";
+  urls += fmt::format("{}", fmt::join(newUrls, "|"));
+
+  statement st = (sql.prepare << "UPDATE CHAPTER SET URLS = :urls WHERE "
+                                 "MANGA_ID = :extra_data AND "
+                                 "ID = :id",
+                  use(urls), use(extraData), use(id));
+  st.execute(true);
+
+  // if the database is not updated, that means something went wrong and the
+  // image should be deleted.
+  if (!st.get_affected_rows())
+    for (const auto &url : newUrls)
+      imagesManager.deleteImage(this->id, "manga", url);
+
+  return getChapter(id, extraData);
+}
+
 vector<string> SelfContained::arrangeMangaImage(string id, string extraData,
                                                 vector<string> newUrls) {
   CHECK_ONLINE()
@@ -403,8 +459,11 @@ vector<string> SelfContained::arrangeMangaImage(string id, string extraData,
   return getChapter(id, extraData);
 }
 
-void SelfContained::deleteMangaImage(string id, string extraData, string hash) {
+void SelfContained::deleteMangaImage(string id, string extraData, string url) {
   CHECK_ONLINE()
+
+  string hash = url;
+  RE2::PartialMatch(url, R"(\/(.{32})\.webp)", &hash);
 
   imagesManager.deleteImage(this->id, "manga", hash);
 
@@ -417,6 +476,8 @@ void SelfContained::deleteMangaImage(string id, string extraData, string hash) {
 
   // remove the hash from the urls
   RE2::GlobalReplace(&urls, R"(\|?)" + hash, "");
+  if (!urls.empty() && urls.rfind("|", 0) == 0)
+    urls.erase(urls.begin());
 
   sql << "UPDATE CHAPTER SET URLS = :urls WHERE MANGA_ID = :extra_data AND ID "
          "= :id",

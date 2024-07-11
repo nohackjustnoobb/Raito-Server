@@ -520,27 +520,53 @@ auto deleteChapter = [](const HttpRequestPtr &req,
 auto uploadImage = [](const HttpRequestPtr &req,
                       function<void(const HttpResponsePtr &)> &&callback) {
   try {
+
     string id = req->getParameter("id");
     if (id == "") {
       JSON_400_RESPONSE(R"({"error":"\"id\" is missing."})")
     }
     string extraData = req->getParameter("extra-data");
 
-    string image = string(req->bodyData(), req->bodyLength());
-    if (req->getHeader("Content-Type") == "text/plain")
-      image = crow::utility::base64decode(image);
-
+    string contentType = req->getHeader("content-type");
     SelfContained *driver =
         (SelfContained *)driversManager.get(*driversManager.cmsId);
-    vector<string> result =
-        extraData == "" ? driver->uploadThumbnail(id, image)
-                        : driver->uploadMangaImage(id, extraData, image);
 
-    HttpResponsePtr resp = HttpResponse::newHttpResponse();
-    resp->setContentTypeString(crow::mime_types.at(result[0]));
-    resp->setBody(result[1]);
+    if (contentType.find("application/json") != string::npos &&
+        extraData != "") {
 
-    return callback(resp);
+      string baseUrl;
+      string host = req->getHeader("host");
+      if (!host.empty())
+        baseUrl =
+            fmt::format("{}://{}/", isLocalIp(host) ? "http" : "https", host);
+
+      json body = json::parse(req->getBody());
+      json decoded = json::array();
+      for (const auto &encoded : body)
+        decoded.push_back(crow::utility::base64decode(encoded));
+
+      json result = json::array();
+      vector<string> urls = driver->uploadMangaImages(id, extraData, decoded);
+      for (const string &url : urls)
+        result.push_back(driver->useProxy(url, "manga", baseUrl));
+
+      JSON_RESPONSE(result.dump());
+    } else {
+      string image = string(req->bodyData(), req->bodyLength());
+      if (contentType.find("text/plain") != string::npos)
+        image = crow::utility::base64decode(image);
+
+      vector<string> result =
+          extraData == "" ? driver->uploadThumbnail(id, image)
+                          : driver->uploadMangaImage(id, extraData, image);
+
+      HttpResponsePtr resp = HttpResponse::newHttpResponse();
+      resp->setContentTypeString(crow::mime_types.at(result[0]));
+      resp->setBody(result[1]);
+
+      return callback(resp);
+    }
+
   } catch (...) {
     JSON_400_RESPONSE(
         R"({"error": "An unexpected error occurred when trying to upload image."})")
@@ -597,15 +623,15 @@ auto deleteMangaImage = [](const HttpRequestPtr &req,
       JSON_400_RESPONSE(R"({"error":"\"extra-data\" is missing."})")
     }
 
-    string hash = req->getParameter("hash");
-    if (hash == "") {
-      JSON_400_RESPONSE(R"({"error":"\"hash\" is missing."})")
+    string url = req->getParameter("url");
+    if (url == "") {
+      JSON_400_RESPONSE(R"({"error":"\"url\" is missing."})")
     }
 
     SelfContained *driver =
         (SelfContained *)driversManager.get(*driversManager.cmsId);
 
-    driver->deleteMangaImage(id, extraData, hash);
+    driver->deleteMangaImage(id, extraData, url);
 
     HttpResponsePtr resp = HttpResponse::newHttpResponse();
     resp->setStatusCode(k204NoContent);

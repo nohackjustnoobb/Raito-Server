@@ -504,18 +504,43 @@ crow::response uploadImage(const crow::request &req) {
 
     char *tryExtraData = req.url_params.get("extra-data");
 
-    string image = req.body;
-    if (req.get_header_value("Content-Type") == "text/plain")
-      image = crow::utility::base64decode(image);
-
+    string contentType = req.get_header_value("Content-Type");
     SelfContained *driver =
         (SelfContained *)driversManager.get(*driversManager.cmsId);
-    vector<string> result =
-        tryExtraData == nullptr
-            ? driver->uploadThumbnail(id, image)
-            : driver->uploadMangaImage(id, string(tryExtraData), image);
 
-    return crow::response(result.at(0), result.at(1));
+    if (contentType.find("application/json") != string::npos &&
+        tryExtraData != nullptr) {
+      string baseUrl;
+      string host = req.get_header_value("host");
+      if (!host.empty())
+        baseUrl =
+            fmt::format("{}://{}/", isLocalIp(host) ? "http" : "https", host);
+
+      json body = json::parse(req.body);
+      json decoded = json::array();
+      for (const auto &encoded : body)
+        decoded.push_back(crow::utility::base64decode(encoded));
+
+      json result = json::array();
+      vector<string> urls =
+          driver->uploadMangaImages(id, string(tryExtraData), decoded);
+      for (const string &url : urls)
+        result.push_back(driver->useProxy(url, "manga", baseUrl));
+
+      return crow::response("json", result.dump());
+    } else {
+
+      string image = req.body;
+      if (contentType.find("text/plain") != string::npos)
+        image = crow::utility::base64decode(image);
+
+      vector<string> result =
+          tryExtraData == nullptr
+              ? driver->uploadThumbnail(id, image)
+              : driver->uploadMangaImage(id, string(tryExtraData), image);
+
+      return crow::response(result.at(0), result.at(1));
+    }
   } catch (...) {
     return crow::response(
         400, "json",
@@ -570,15 +595,15 @@ crow::response deleteMangaImage(const crow::request &req) {
       return crow::response(400, "json",
                             R"({"error":"\"extra-data\" is missing."})");
 
-    char *tryHash = req.url_params.get("hash");
-    if (tryHash == nullptr)
-      return crow::response(400, "json", R"({"error":"\"hash\" is missing."})");
+    char *tryUrl = req.url_params.get("url");
+    if (tryUrl == nullptr)
+      return crow::response(400, "json", R"({"error":"\"url\" is missing."})");
 
     SelfContained *driver =
         (SelfContained *)driversManager.get(*driversManager.cmsId);
 
     driver->deleteMangaImage(string(tryId), string(tryExtraData),
-                             string(tryHash));
+                             string(tryUrl));
 
     return crow::response(204);
   } catch (...) {
@@ -669,6 +694,7 @@ void startCrowServer(int port, string *_webpageUrl, string *_accessKey,
   // CORS
   auto &cors = app.get_middleware<crow::CORSHandler>();
   cors.global().methods(crow::HTTPMethod::GET, crow::HTTPMethod::POST,
+                        crow::HTTPMethod::PUT, crow::HTTPMethod::DELETE,
                         crow::HTTPMethod::OPTIONS);
 
   CROW_ROUTE(app, "/")(getServerInfo);
@@ -714,6 +740,8 @@ void startCrowServer(int port, string *_webpageUrl, string *_accessKey,
   CROW_ROUTE(app, "/admin/image/edit")
       .methods(crow::HTTPMethod::DELETE)(deleteMangaImage);
 
+  log("Crow", "This framework is unstable. Please avoid using this framework.",
+      fmt::color::red);
   log("Crow", fmt::format("Listening on Port {}", port));
   app.port(port).multithreaded().run();
 }

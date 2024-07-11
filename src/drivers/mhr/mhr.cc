@@ -21,7 +21,7 @@ using namespace MHR_utils;
 
 MHR::MHR() {
   id = "MHR";
-  version = "0.1.0-beta.4";
+  version = "0.1.0-beta.5";
 
   supportSuggestion = true;
   for (const auto &pair : categoryId)
@@ -348,8 +348,9 @@ Manga *MHR::convertDetails(const json &data) {
 string MHR::extractThumbnail(const string &url) {
   // make a copy
   string thumbnail = url;
+
   // swap the source to a faster alternative
-  RE2::GlobalReplace(&thumbnail, RE2("cdndm5.com"), "cdnmanhua.net");
+  // RE2::GlobalReplace(&thumbnail, RE2("cdndm5.com"), "cdnmanhua.net");
 
   return thumbnail;
 }

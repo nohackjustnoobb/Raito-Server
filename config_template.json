@@ -8,8 +8,8 @@
         "baseUrl": "http://example.com/",
         // Optional, the framework used for building the http server
         // Available options: "crow", "drogon"
-        // Default: "crow"
-        "framework": "crow",
+        // Default: "drogon"
+        "framework": "drogon",
         // Optional, the port to listen on
         // Default: 8000
         "port": 8000,

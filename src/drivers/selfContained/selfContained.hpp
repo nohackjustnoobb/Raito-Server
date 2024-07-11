@@ -66,6 +66,10 @@ public:
   vector<string> uploadMangaImage(string id, string extraData,
                                   const string &image);
 
+  // Append images to the given chapter.
+  vector<string> uploadMangaImages(string id, string extraData,
+                                   vector<string> images);
+
   // Change the order of the image.
   // It will check for the completeness of the given urls and it will update the
   // database only if the urls contains all the existing urls.
@@ -73,7 +77,7 @@ public:
                                    vector<string> newUrls);
 
   // Remove the given image from the given chapter
-  void deleteMangaImage(string id, string extraData, string hash);
+  void deleteMangaImage(string id, string extraData, string url);
 
   // Update the cached titles for searching and suggesting.
   void updateCaches();

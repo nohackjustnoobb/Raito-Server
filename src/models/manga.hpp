@@ -44,17 +44,20 @@ struct Chapters {
 
   static Chapters fromJson(const json &data) {
     Chapters chapters;
-    chapters.extraData = data["extraData"].get<string>();
+    if (data.contains("extraData"))
+      chapters.extraData = data["extraData"].get<string>();
     chapters.serial = {};
     chapters.extra = {};
 
-    for (const auto &chapter : data["serial"])
-      chapters.serial.push_back(
-          {chapter["title"].get<string>(), chapter["id"].get<string>()});
+    if (data.contains("serial"))
+      for (const auto &chapter : data["serial"])
+        chapters.serial.push_back(
+            {chapter["title"].get<string>(), chapter["id"].get<string>()});
 
-    for (const auto &chapter : data["extra"])
-      chapters.extra.push_back(
-          {chapter["title"].get<string>(), chapter["id"].get<string>()});
+    if (data.contains("extra"))
+      for (const auto &chapter : data["extra"])
+        chapters.extra.push_back(
+            {chapter["title"].get<string>(), chapter["id"].get<string>()});
 
     return chapters;
   }
@@ -161,14 +164,17 @@ public:
       categories.push_back(stringToCategory(category));
 
     int *updateTime;
-    if (data.contains("updateTime"))
+    if (data.contains("updateTime") && !data["updateTime"].is_null())
       updateTime = new int(data["updateTime"].get<int>());
 
     return new DetailsManga(
-        driversManager.get(data["driver"]), data["id"].get<string>(),
-        data["title"].get<string>(), data["thumbnail"].get<string>(),
-        data["latest"].get<string>(), data["authors"].get<vector<string>>(),
-        data["isEnded"].get<bool>(), data["description"].get<string>(),
-        categories, Chapters::fromJson(data["chapters"]), updateTime);
+        data.contains("driver")
+            ? driversManager.get(data["driver"].get<string>())
+            : nullptr,
+        data["id"].get<string>(), data["title"].get<string>(),
+        data["thumbnail"].get<string>(), data["latest"].get<string>(),
+        data["authors"].get<vector<string>>(), data["isEnded"].get<bool>(),
+        data["description"].get<string>(), categories,
+        Chapters::fromJson(data["chapters"]), updateTime);
   }
 };

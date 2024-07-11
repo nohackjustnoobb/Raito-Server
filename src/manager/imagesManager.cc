@@ -34,8 +34,10 @@ string ImagesManager::getPath(const string &id, const string &genre,
   string hash = MD5()(removeHost);
 
   string path = fmt::format("../image/{}/{}/{}.src", id, genre, hash);
-  if (!filesystem::exists(path)) {
-    std::ofstream ofs(path);
+  string cachePath =
+      fmt::format("../image/{}/{}/{}.{}", id, genre, hash, SAVE_FORMAT);
+  if (!filesystem::exists(cachePath)) {
+    std::ofstream ofs(path, ios::trunc);
     ofs << dest;
     ofs.close();
   }

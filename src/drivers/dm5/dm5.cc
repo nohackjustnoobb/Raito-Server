@@ -19,14 +19,14 @@ using namespace DM5_utils;
 
 DM5::DM5() {
   id = "DM5";
-  version = "0.1.0-beta.1";
+  version = "0.1.0-beta.2";
 
   supportSuggestion = true;
   recommendedChunkSize = 10;
   for (const auto &pair : categoryId)
     supportedCategories.push_back(pair.first);
 
-  proxyHeaders = {{"referer", "http://www.dm5.com/dm5api/"}};
+  proxyHeaders = {{"referer", "https://www.manhuaren.com"}};
 }
 
 vector<Manga *> DM5::getManga(vector<string> ids, bool showDetails) {
