@@ -26,6 +26,10 @@ This driver scraped the manga information from the website. Its source is the sa
 
 Official link: [click here](https://www.dm5.com)
 
+## Content management system (CMS)
+
+This server can also be used as a CMS server by enabling the CMS in the configuration file. To access the management system, use the front-end from [Raito-Admin-Panel](https://github.com/nohackjustnoobb/Raito-Admin-Panel).
+
 ## Quick Start
 
 1. Create a `config.json` file based on the `config_template.json`.

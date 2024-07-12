@@ -19,7 +19,7 @@ using namespace DM5_utils;
 
 DM5::DM5() {
   id = "DM5";
-  version = "0.1.0-beta.2";
+  version = "1.0.0-beta.2";
 
   supportSuggestion = true;
   recommendedChunkSize = 10;

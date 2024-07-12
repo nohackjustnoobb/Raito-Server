@@ -23,7 +23,7 @@ using namespace MHG_utils;
 
 MHG::MHG() {
   id = "MHG";
-  version = "0.1.0-beta.7";
+  version = "1.0.0-beta.7";
 
   supportSuggestion = false;
   recommendedChunkSize = 5;

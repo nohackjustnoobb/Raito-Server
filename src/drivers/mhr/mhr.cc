@@ -21,7 +21,7 @@ using namespace MHR_utils;
 
 MHR::MHR() {
   id = "MHR";
-  version = "0.1.0-beta.5";
+  version = "1.0.0-beta.5";
 
   supportSuggestion = true;
   for (const auto &pair : categoryId)

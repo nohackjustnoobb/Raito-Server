@@ -12,13 +12,13 @@
 
 SelfContained::SelfContained() {
   id = "SC";
-  version = "0.1.0-beta.0";
+  version = "1.0.0-beta.0";
   supportSuggestion = true;
   supportedCategories = {
-      Passionate, Love,    Campus, Yuri,   Otokonoko,  BL,
-      Adventure,  Harem,   SciFi,  War,    Suspense,   Speculation,
-      Funny,      Fantasy, Magic,  Horror, Ghosts,     History,
-      FanFi,      Sports,  Hentai, Mecha,  Restricted,
+      All,         Passionate, Love,    Campus, Yuri,   Otokonoko,
+      BL,          Adventure,  Harem,   SciFi,  War,    Suspense,
+      Speculation, Funny,      Fantasy, Magic,  Horror, Ghosts,
+      History,     FanFi,      Sports,  Hentai, Mecha,  Restricted,
   };
 
   thread(&SelfContained::initializeDatabase, this).detach();
