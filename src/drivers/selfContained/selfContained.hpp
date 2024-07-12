@@ -1,32 +1,14 @@
 #pragma once
 
-#include "../../models/baseDriver.hpp"
-#include "../../models/manga.hpp"
+#include "../../models/localDriver.hpp"
 
-#include <soci/soci.h>
-
-using namespace std;
-using namespace soci;
-
-class SelfContained : public BaseDriver {
+class SelfContained : public LocalDriver {
 
 public:
   SelfContained();
 
-  vector<Manga *> getManga(vector<string> ids, bool showDetails) override;
-
-  vector<string> getChapter(string id, string extraData) override;
-
-  vector<Manga *> getList(Category category, int page, Status status) override;
-
-  vector<string> getSuggestion(string keyword) override;
-
-  vector<Manga *> search(string keyword, int page) override;
-
   string useProxy(const string &dest, const string &genre,
                   const string &baseUrl) override;
-
-  bool checkOnline() override;
 
   void applyConfig(json config) override;
 
@@ -79,26 +61,8 @@ public:
   // Remove the given image from the given chapter
   void deleteMangaImage(string id, string extraData, string url);
 
-  // Update the cached titles for searching and suggesting.
-  void updateCaches();
-
 private:
-  bool isOnline = true;
-  string parameters;
-  string sqlName = "sqlite3";
-  connection_pool *pool;
-  map<string, string> titlesWithId;
-  vector<string> titles;
-
-  Manga *toManga(const row &row, bool showDetails = false);
-
   Chapters getChapters(string extraData);
-
-  vector<string> extract(string keyword, int limit = 5);
-
-  void titlesCacheUpdateLoop();
-
-  void initializeDatabase();
 
   string generateId();
 

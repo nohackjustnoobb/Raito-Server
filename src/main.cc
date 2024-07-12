@@ -3,7 +3,7 @@
 #include "utils/utils.hpp"
 
 // Drivers
-#include "drivers/activeAdapter/activeAdapter.cc"
+#include "drivers/activeAdapter/activeAdapter.hpp"
 #include "drivers/dm5/dm5.hpp"
 #include "drivers/mhg/mhg.hpp"
 #include "drivers/mhr/mhr.hpp"
@@ -21,7 +21,7 @@
 // #include <soci/postgresql/soci-postgresql.h>
 #include <string>
 
-#define RAITO_SERVER_VERSION "0.1.0-beta.27"
+#define RAITO_SERVER_VERSION "0.1.0-beta.28"
 #define RAITO_DEFAULT_FRAMEWORK "drogon"
 
 // Main entry point

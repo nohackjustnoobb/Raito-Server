@@ -32,7 +32,8 @@ static vector<string> split(string s, RE2 r) {
 // Release memory for each element in a vector.
 template <typename T> static void releaseMemory(vector<T> vector) {
   for (T ptr : vector) {
-    delete ptr;
+    if (ptr != nullptr)
+      delete ptr;
   }
 }
 
