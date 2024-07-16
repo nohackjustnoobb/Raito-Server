@@ -12,7 +12,7 @@
 
 SelfContained::SelfContained() {
   id = "SC";
-  version = "1.0.0-beta.0";
+  version = "1.0.0-beta.1";
   supportSuggestion = true;
   supportedCategories = {
       All,         Passionate, Love,    Campus, Yuri,   Otokonoko,
@@ -92,13 +92,12 @@ Manga *SelfContained::editManga(DetailsManga *manga) {
       use(fmt::format("{}", fmt::join(manga->authors, "|"))),
       use(categories.str()), use(manga->id);
 
-  row r;
-  sql << "SELECT * FROM MANGA WHERE ID = :id", use(manga->id), into(r);
+  Manga *newManga = getManga({manga->id}, true).at(0);
 
   // release the memory
   delete manga;
 
-  return toManga(r, true);
+  return newManga;
 }
 
 void SelfContained::deleteManga(string id) {

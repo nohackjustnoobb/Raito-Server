@@ -365,6 +365,8 @@ auto getShare = [](const HttpRequestPtr &req,
         *webpageUrl, driverId, id, converter.toTraditional(manga->title),
         manga->thumbnail, converter.toTraditional(manga->description)));
 
+    delete manga;
+
     return callback(resp);
   } catch (...) {
     // if any unexpected error is encountered
@@ -416,6 +418,8 @@ auto createOrEditManga = [](const HttpRequestPtr &req,
       result = driver->editManga(manga);
 
     JSON_RESPONSE(result->toJson().dump());
+
+    delete result;
   } catch (...) {
     JSON_400_RESPONSE(
         R"({"error": "An unexpected error occurred when trying to create/edit manga."})")
