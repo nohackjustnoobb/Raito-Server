@@ -21,7 +21,7 @@
 // #include <soci/postgresql/soci-postgresql.h>
 #include <string>
 
-#define RAITO_SERVER_VERSION "1.0.0-beta.29"
+#define RAITO_SERVER_VERSION "1.0.0-beta.30"
 #define RAITO_DEFAULT_FRAMEWORK "drogon"
 
 // Main entry point
@@ -50,10 +50,7 @@ int main() {
       // initialize the imagesManager
       if (server.contains("baseUrl")) {
         string baseUrl = server["baseUrl"].get<string>();
-        if (RE2::FullMatch(baseUrl, R"(^https?:\/\/.*\/$)"))
-          imagesManager.setBaseUrl(baseUrl);
-        else
-          log("RaitoServer", "\"baseUrl\" is not valid and is ignored");
+        imagesManager.setBaseUrl(baseUrl);
       }
 
       if (server.contains("framework"))
@@ -67,11 +64,8 @@ int main() {
       if (server.contains("webpageUrl")) {
         string url = server["webpageUrl"].get<string>();
 
-        if (RE2::FullMatch(url, R"(^https?:\/\/.*\/$)"))
-          webpageUrl = new string(url);
-        else
-          log("RaitoServer", "\"webpageUrl\" is not valid and is ignored; some "
-                             "features will be disabled");
+        webpageUrl = new string(url);
+
       } else {
         log("RaitoServer", "\"webpageUrl\" is not found in the configuration "
                            "file; some features will be disabled");
