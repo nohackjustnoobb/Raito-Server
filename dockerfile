@@ -1,4 +1,4 @@
-FROM python:3.9 as builder
+FROM python:3.9-bookworm as builder
 
 WORKDIR /app
 COPY conanfile.py CMakeLists.txt ./

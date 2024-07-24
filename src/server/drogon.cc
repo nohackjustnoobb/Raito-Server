@@ -713,7 +713,8 @@ void startDrogonServer(int port, string *_webpageUrl, string *_accessKey,
 
     // Other requests
     if (!isAdminPanel &&
-        (accessKey == nullptr || req->getHeader("Access-Key") == *accessKey))
+        (RE2::FullMatch(req->path(), R"(^\/image.*$)") ||
+         accessKey == nullptr || req->getHeader("Access-Key") == *accessKey))
       return chainCallback();
 
     // If not matching any of the above conditions

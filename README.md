@@ -53,7 +53,7 @@ services:
 3. Create the container
 
 ```bash
-sudo docker-compose up -d
+sudo docker compose up -d
 ```
 
 ## Manual Setup (Not Recommended)
