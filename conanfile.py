@@ -3,7 +3,6 @@ from conan import ConanFile
 
 class RaitoServer(ConanFile):
     requires = [
-        "crowcpp-crow/1.2.0",
         "drogon/1.9.3",
         "nlohmann_json/3.11.3",
         "re2/20231101",

@@ -12,7 +12,7 @@ RUN conan install . --output-folder=build --build=missing
 COPY src src/
 RUN cd /app/build && cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release && make
 
-FROM ubuntu:noble as final
+FROM debian:bookworm-slim as final
 
 COPY --from=builder /app/build/Raito-Server /app/build/Raito-Server
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates

@@ -10,7 +10,6 @@
 #include "drivers/selfContained/selfContained.hpp"
 
 // Backend servers
-#include "server/crow.hpp"
 #include "server/drogon.hpp"
 
 #include <FreeImage.h>
@@ -21,8 +20,7 @@
 // #include <soci/postgresql/soci-postgresql.h>
 #include <string>
 
-#define RAITO_SERVER_VERSION "1.0.0-beta.30"
-#define RAITO_DEFAULT_FRAMEWORK "drogon"
+#define RAITO_SERVER_VERSION "1.0.0-beta.31"
 
 // Main entry point
 int main() {
@@ -34,7 +32,6 @@ int main() {
   string *accessKey = nullptr;
   string *adminAccessKey = nullptr;
   bool adminAllowOnlyLocal = true;
-  string framework = RAITO_DEFAULT_FRAMEWORK;
   int port = 8000;
 
   // TODO You can add your own drivers here:
@@ -52,9 +49,6 @@ int main() {
         string baseUrl = server["baseUrl"].get<string>();
         imagesManager.setBaseUrl(baseUrl);
       }
-
-      if (server.contains("framework"))
-        framework = server["framework"].get<string>();
 
       // set port
       if (server.contains("port"))
@@ -166,11 +160,7 @@ int main() {
   // All libraries are initialized
   driversManager.isReady = true;
 
-  if (framework == "drogon")
-    startDrogonServer(port, webpageUrl, accessKey, adminAccessKey,
-                      adminAllowOnlyLocal);
-  else
-    startCrowServer(port, webpageUrl, accessKey, adminAccessKey,
+  startDrogonServer(port, webpageUrl, accessKey, adminAccessKey,
                     adminAllowOnlyLocal);
 
   FreeImage_DeInitialise();

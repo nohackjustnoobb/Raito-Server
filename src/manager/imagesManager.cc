@@ -1,8 +1,9 @@
 #include "imagesManager.hpp"
+#include "../utils/base64.hpp"
+#include "../utils/mimeTypes.h"
 #include "../utils/utils.hpp"
 #include "driversManager.hpp"
 
-#include "crow.h"
 #include "md5.h"
 #include <FreeImage.h>
 #include <chrono>
@@ -82,9 +83,8 @@ vector<string> ImagesManager::getImage(const string &id, const string &genre,
 
     if (asBase64)
       return {"txt",
-              fmt::format(
-                  "data:{};base64, {}", crow::mime_types.at(SAVE_FORMAT),
-                  crow::utility::base64encode(imageData, imageData.size()))};
+              fmt::format("data:{};base64, {}", mime_types.at(SAVE_FORMAT),
+                          base64::to_base64(imageData))};
 
     return {SAVE_FORMAT, imageData};
   }

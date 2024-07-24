@@ -3,10 +3,11 @@
 #include "../drivers/selfContained/selfContained.hpp"
 #include "../manager/driversManager.hpp"
 #include "../models/manga.hpp"
+#include "../utils/base64.hpp"
 #include "../utils/converter.hpp"
+#include "../utils/mimeTypes.h"
 #include "../utils/utils.hpp"
 
-#include "crow.h"
 #include <drogon/drogon.h>
 #include <fmt/format.h>
 #include <nlohmann/json.hpp>
@@ -386,7 +387,7 @@ auto getImage = [](const HttpRequestPtr &req,
     vector<string> result = imagesManager.getImage(id, genre, hash, useBase64);
 
     HttpResponsePtr resp = HttpResponse::newHttpResponse();
-    resp->setContentTypeString(crow::mime_types.at(result[0]));
+    resp->setContentTypeString(mime_types.at(result[0]));
     resp->setBody(result[1]);
 
     string cacheControl = req->getHeader("Cache-Control");
@@ -547,7 +548,7 @@ auto uploadImage = [](const HttpRequestPtr &req,
       json body = json::parse(req->getBody());
       json decoded = json::array();
       for (const auto &encoded : body)
-        decoded.push_back(crow::utility::base64decode(encoded));
+        decoded.push_back(base64::from_base64(encoded.get<string>()));
 
       json result = json::array();
       vector<string> urls = driver->uploadMangaImages(id, extraData, decoded);
@@ -558,14 +559,14 @@ auto uploadImage = [](const HttpRequestPtr &req,
     } else {
       string image = string(req->bodyData(), req->bodyLength());
       if (contentType.find("text/plain") != string::npos)
-        image = crow::utility::base64decode(image);
+        image = base64::from_base64(image);
 
       vector<string> result =
           extraData == "" ? driver->uploadThumbnail(id, image)
                           : driver->uploadMangaImage(id, extraData, image);
 
       HttpResponsePtr resp = HttpResponse::newHttpResponse();
-      resp->setContentTypeString(crow::mime_types.at(result[0]));
+      resp->setContentTypeString(mime_types.at(result[0]));
       resp->setBody(result[1]);
 
       return callback(resp);

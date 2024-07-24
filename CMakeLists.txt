@@ -12,7 +12,6 @@ file(GLOB_RECURSE SOURCE_FILES
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
-find_package(Crow REQUIRED)
 find_package(Drogon CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(hash-library REQUIRED)
@@ -28,7 +27,6 @@ find_package(lexbor REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
     Drogon::Drogon
-    Crow::Crow
     nlohmann_json::nlohmann_json
     re2::re2
     hash-library::hash-library
