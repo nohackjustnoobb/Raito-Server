@@ -23,8 +23,8 @@ public:
   int recommendedChunkSize = 0;
   // Determines whether the driver supports suggestions.
   bool supportSuggestion;
-  // The supported categories for the driver.
-  vector<Category> supportedCategories;
+  // The supported genre for the driver.
+  vector<Genre> supportedGenres;
   // The proxy headers that the image manager will use to fetch images.
   cpr::Header proxyHeaders;
 
@@ -37,8 +37,7 @@ public:
 
   // Return a list of manga for the given information.
   // The size of the returned list should be limited to 50.
-  virtual vector<Manga *> getList(Category category, int page,
-                                  Status status) = 0;
+  virtual vector<Manga *> getList(Genre category, int page, Status status) = 0;
 
   // Return a list of suggestions for the given keyword.
   // The size of the returned list should be limited to 5.

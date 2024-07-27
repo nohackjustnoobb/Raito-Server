@@ -106,12 +106,12 @@ auto getDriverInfo = [](const HttpRequestPtr &req,
                         function<void(const HttpResponsePtr &)> &&callback) {
   GET_DRIVER()
 
-  vector<string> categories;
-  for (Category category : driver->supportedCategories)
-    categories.push_back(categoryToString(category));
+  vector<string> genres;
+  for (Genre category : driver->supportedGenres)
+    genres.push_back(genreToString(category));
 
   json info;
-  info["supportedCategories"] = categories;
+  info["supportedGenres"] = genres;
   info["recommendedChunkSize"] = driver->recommendedChunkSize;
   info["supportSuggestion"] = driver->supportSuggestion;
   info["version"] = driver->version;
@@ -169,10 +169,10 @@ auto getList = [](const HttpRequestPtr &req,
 
   GET_PROXY()
 
-  Category category = All;
+  Genre category = All;
   string tryCategory = req->getParameter("category");
   if (tryCategory != "")
-    category = stringToCategory(tryCategory);
+    category = stringToGenre(tryCategory);
 
   Status status = Any;
   string tryStatus = req->getParameter("status");

@@ -16,7 +16,7 @@ public:
 
   vector<string> getChapter(string id, string extraData, string proxy) override;
 
-  vector<Manga *> getList(Category category, int page, Status status) override;
+  vector<Manga *> getList(Genre category, int page, Status status) override;
 
   vector<Manga *> search(string keyword, int page) override;
 
@@ -35,27 +35,27 @@ private:
 #pragma GCC diagnostic pop
 
   string baseUrl = "https://tw.manhuagui.com/";
-  map<Category, string> categoryText = {{All, ""},
-                                        {Passionate, "rexue"},
-                                        {Love, "aiqing"},
-                                        {Campus, "xiaoyuan"},
-                                        {Yuri, "baihe"},
-                                        {BL, "danmei"},
-                                        {Adventure, "maoxian"},
-                                        {Harem, "hougong"},
-                                        {SciFi, "kehuan"},
-                                        {War, "zhanzheng"},
-                                        {Suspense, "xuanyi"},
-                                        {Speculation, "tuili"},
-                                        {Funny, "gaoxiao"},
-                                        {Fantasy, "mohuan"},
-                                        {Magic, "mofa"},
-                                        {Horror, "kongbu"},
-                                        {Ghosts, "shengui"},
-                                        {History, "lishi"},
-                                        {Sports, "jingji"},
-                                        {Mecha, "jizhan"},
-                                        {Otokonoko, "weiniang"}};
+  map<Genre, string> categoryText = {{All, ""},
+                                     {HotBlooded, "rexue"},
+                                     {Romance, "aiqing"},
+                                     {Campus, "xiaoyuan"},
+                                     {Yuri, "baihe"},
+                                     {BL, "danmei"},
+                                     {Adventure, "maoxian"},
+                                     {Harem, "hougong"},
+                                     {SciFi, "kehuan"},
+                                     {War, "zhanzheng"},
+                                     {Suspense, "xuanyi"},
+                                     {Speculation, "tuili"},
+                                     {Funny, "gaoxiao"},
+                                     {Fantasy, "mohuan"},
+                                     {Magic, "mofa"},
+                                     {Horror, "kongbu"},
+                                     {Ghosts, "shengui"},
+                                     {Historical, "lishi"},
+                                     {Sports, "jingji"},
+                                     {Mecha, "jizhan"},
+                                     {Otokonoko, "weiniang"}};
 
   Manga *extractDetails(Node *node, const string &id, const bool showDetails);
 

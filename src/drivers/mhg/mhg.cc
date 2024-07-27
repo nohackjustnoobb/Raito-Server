@@ -30,7 +30,7 @@ MHG::MHG() {
   timeout = 10;
 
   for (const auto &pair : categoryText)
-    supportedCategories.push_back(pair.first);
+    supportedGenres.push_back(pair.first);
 
   proxyHeaders = {{"referer", "https://tw.manhuagui.com"}};
 }
@@ -111,7 +111,7 @@ vector<string> MHG::getChapter(string id, string extraData, string proxy) {
   return result;
 };
 
-vector<Manga *> MHG::getList(Category category, int page, Status status) {
+vector<Manga *> MHG::getList(Genre category, int page, Status status) {
   string url = baseUrl + "list/";
   string filter;
 
@@ -254,22 +254,22 @@ Manga *MHG::extractDetails(Node *node, const string &id,
 
   details = node->find("ul.detail-list > :nth-child(2)");
 
-  vector<Node *> categoriesNode = details->findAll("span:nth-child(1) > a");
-  vector<Category> categories;
+  vector<Node *> genresNode = details->findAll("span:nth-child(1) > a");
+  vector<Genre> genres;
 
   string temp;
-  for (Node *node : categoriesNode) {
+  for (Node *node : genresNode) {
     temp = node->getAttribute("href");
     temp = temp.substr(6, temp.length() - 7);
 
     for (const auto &pair : categoryText) {
       if (pair.second == temp) {
-        categories.push_back(pair.first);
+        genres.push_back(pair.first);
       }
     }
   }
 
-  releaseMemory(categoriesNode);
+  releaseMemory(genresNode);
 
   vector<Node *> authorNode = details->findAll("span:nth-child(2) > a");
   vector<string> authors;
@@ -337,7 +337,7 @@ Manga *MHG::extractDetails(Node *node, const string &id,
   }
 
   return new DetailsManga(this, id, title, thumbnail, latest, authors, isEnded,
-                          description, categories, {serial, extra, id});
+                          description, genres, {serial, extra, id});
 }
 
 Manga *MHG::extractManga(Node *node) {

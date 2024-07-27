@@ -17,7 +17,7 @@ public:
 
   vector<string> getChapter(string id, string extraData) override;
 
-  vector<Manga *> getList(Category category, int page, Status status) override;
+  vector<Manga *> getList(Genre category, int page, Status status) override;
 
   vector<string> getSuggestion(string keyword) override;
 
@@ -50,20 +50,20 @@ private:
       {"User-Agent",
        R"(Mozilla/5.0 (Linux; Android 12; sdk_gphone64_arm64 Build/SE1A.220630.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/91.0.4472.114 Mobile Safari/537.36)"}};
 
-  map<Category, int> categoryId = {
-      {All, 0},     {Passionate, 31}, {Love, 26},       {Campus, 1},
+  map<Genre, int> categoryId = {
+      {All, 0},     {HotBlooded, 31}, {Romance, 26},    {Campus, 1},
       {Yuri, 3},    {BL, 27},         {Adventure, 2},   {Harem, 8},
       {SciFi, 25},  {War, 12},        {Suspense, 17},   {Speculation, 33},
       {Funny, 37},  {Fantasy, 14},    {Magic, 15},      {Horror, 29},
-      {Ghosts, 20}, {History, 4},     {FanFi, 30},      {Sports, 34},
+      {Ghosts, 20}, {Historical, 4},  {FanFi, 30},      {Sports, 34},
       {Hentai, 36}, {Mecha, 40},      {Restricted, 61}, {Otokonoko, 5}};
-  map<string, Category> categoryText = {
-      {"热血", Passionate}, {"恋爱", Love},         {"爱情", Love},
+  map<string, Genre> categoryText = {
+      {"热血", HotBlooded}, {"恋爱", Romance},      {"爱情", Romance},
       {"校园", Campus},     {"百合", Yuri},         {"彩虹", BL},
       {"冒险", Adventure},  {"后宫", Harem},        {"科幻", SciFi},
       {"战争", War},        {"悬疑", Suspense},     {"推理", Speculation},
       {"搞笑", Funny},      {"奇幻", Fantasy},      {"魔法", Magic},
-      {"恐怖", Horror},     {"神鬼", Ghosts},       {"历史", History},
+      {"恐怖", Horror},     {"神鬼", Ghosts},       {"历史", Historical},
       {"同人", FanFi},      {"运动", Sports},       {"绅士", Hentai},
       {"机甲", Mecha},      {"限制级", Restricted}, {"伪娘", Otokonoko}};
 

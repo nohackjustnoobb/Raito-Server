@@ -107,8 +107,8 @@ class DetailsManga : public Manga {
 public:
   // The description of the manga.
   string description;
-  // The catgory of the manga.
-  vector<Category> categories;
+  // The genres of the manga.
+  vector<Genre> genres;
   // The chapters of the manga.
   Chapters chapters;
   // The authors of the manga.
@@ -119,10 +119,10 @@ public:
   DetailsManga(BaseDriver *driver, const string &id, const string &title,
                const string &thumbnail, const string &latest,
                const vector<string> &authors, const bool &isEnded,
-               const string &description, const vector<Category> &categories,
+               const string &description, const vector<Genre> &genres,
                const Chapters &chapters, int *updateTime = nullptr)
       : Manga(driver, id, title, thumbnail, latest, isEnded), authors(authors),
-        description(description), categories(categories), chapters(chapters),
+        description(description), genres(genres), chapters(chapters),
         updateTime(updateTime) {}
 
   ~DetailsManga() {
@@ -144,11 +144,11 @@ public:
     result["authors"] = authors;
     result["chapters"] = chapters.toJson();
 
-    vector<string> categoriesString;
-    for (Category category : categories)
-      categoriesString.push_back(categoryToString(category));
+    vector<string> genresString;
+    for (Genre category : genres)
+      genresString.push_back(genreToString(category));
 
-    result["categories"] = categoriesString;
+    result["genres"] = genresString;
 
     if (updateTime != nullptr)
       result["updateTime"] = *updateTime;
@@ -159,9 +159,9 @@ public:
   }
 
   static DetailsManga *fromJson(const json &data) {
-    vector<Category> categories;
-    for (string category : data["categories"])
-      categories.push_back(stringToCategory(category));
+    vector<Genre> genres;
+    for (string category : data["genres"])
+      genres.push_back(stringToGenre(category));
 
     int *updateTime;
     if (data.contains("updateTime") && !data["updateTime"].is_null())
@@ -174,7 +174,7 @@ public:
         data["id"].get<string>(), data["title"].get<string>(),
         data["thumbnail"].get<string>(), data["latest"].get<string>(),
         data["authors"].get<vector<string>>(), data["isEnded"].get<bool>(),
-        data["description"].get<string>(), categories,
+        data["description"].get<string>(), genres,
         Chapters::fromJson(data["chapters"]), updateTime);
   }
 };

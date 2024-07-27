@@ -25,7 +25,7 @@ MHR::MHR() {
 
   supportSuggestion = true;
   for (const auto &pair : categoryId)
-    supportedCategories.push_back(pair.first);
+    supportedGenres.push_back(pair.first);
 
   proxyHeaders = {{"referer", "http://www.dm5.com/dm5api/"}};
 }
@@ -143,7 +143,7 @@ vector<string> MHR::getChapter(string id, string extraData) {
   return result;
 };
 
-vector<Manga *> MHR::getList(Category category, int page, Status status) {
+vector<Manga *> MHR::getList(Genre category, int page, Status status) {
 
   map<string, string> query = {
       {"subCategoryType", "0"},
@@ -327,12 +327,12 @@ Manga *MHR::convertDetails(const json &data) {
   pushChapters(data["mangaEpisode"], extra);
   pushChapters(data["mangaRolls"], extra);
 
-  vector<Category> categories;
-  string rawCategoriesText = data["mangaTheme"].get<string>();
+  vector<Genre> genres;
+  string rawGenresText = data["mangaTheme"].get<string>();
 
   for (const auto &pair : categoryText) {
-    if (rawCategoriesText.find(pair.first) != string::npos) {
-      categories.push_back(pair.second);
+    if (rawGenresText.find(pair.first) != string::npos) {
+      genres.push_back(pair.second);
     }
   }
 
@@ -342,7 +342,7 @@ Manga *MHR::convertDetails(const json &data) {
       data["mangaNewsectionName"].get<string>(),
       data["mangaAuthors"].get<vector<string>>(),
       data["mangaIsOver"].get<int>() == 1, data["mangaIntro"].get<string>(),
-      categories, {serial, extra, id}, updateTime);
+      genres, {serial, extra, id}, updateTime);
 }
 
 string MHR::extractThumbnail(const string &url) {

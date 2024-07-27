@@ -16,7 +16,7 @@ using namespace soci;
     throw "Database is offline";
 
 #define CREATE_MANGA_TABLES_SQL                                                \
-  R"(CREATE TABLE IF NOT EXISTS "MANGA"("ID" VARCHAR(255) NOT NULL PRIMARY KEY, "AUTHORS" VARCHAR(255) NOT NULL, "CATEGORIES" VARCHAR(255) NOT NULL, "DESCRIPTION" TEXT NOT NULL, "IS_ENDED" INTEGER NOT NULL, "LATEST" VARCHAR(255) NOT NULL, "THUMBNAIL" VARCHAR(255) NOT NULL, "TITLE" VARCHAR(255) NOT NULL, "UPDATE_TIME" INTEGER NOT NULL, "EXTRA_DATA" VARCHAR(255) NOT NULL);)"
+  R"(CREATE TABLE IF NOT EXISTS "MANGA"("ID" VARCHAR(255) NOT NULL PRIMARY KEY, "AUTHORS" VARCHAR(255) NOT NULL, "GENRES" VARCHAR(255) NOT NULL, "DESCRIPTION" TEXT NOT NULL, "IS_ENDED" INTEGER NOT NULL, "LATEST" VARCHAR(255) NOT NULL, "THUMBNAIL" VARCHAR(255) NOT NULL, "TITLE" VARCHAR(255) NOT NULL, "UPDATE_TIME" INTEGER NOT NULL, "EXTRA_DATA" VARCHAR(255) NOT NULL);)"
 
 #define CREATE_CHAPTER_TABLES_SQL                                              \
   R"(CREATE TABLE IF NOT EXISTS "CHAPTER" ("MANGA_ID" VARCHAR(255) NOT NULL, "ID" VARCHAR(255) NOT NULL, "IDX" INTEGER NOT NULL, "IS_EXTRA" INTEGER NOT NULL, "TITLE" VARCHAR(255) NOT NULL, "URLS" TEXT, PRIMARY KEY ("MANGA_ID", "ID"), FOREIGN KEY ("MANGA_ID") REFERENCES "MANGA" ("ID")); CREATE INDEX "chaptermodel_MANGA_ID" ON "CHAPTER" ("MANGA_ID");)"
@@ -95,7 +95,7 @@ public:
     return split(urls, R"(\|)");
   }
 
-  virtual vector<Manga *> getList(Category category, int page,
+  virtual vector<Manga *> getList(Genre category, int page,
                                   Status status) override {
     CHECK_ONLINE()
 
@@ -103,9 +103,8 @@ public:
     if (status != Any)
       queryString += " WHERE IS_ENDED = " + to_string(status == Ended);
     if (category != All)
-      queryString +=
-          (status == Any ? " WHERE" : " AND") +
-          (" CATEGORIES LIKE '%" + categoryToString(category) + "%'");
+      queryString += (status == Any ? " WHERE" : " AND") +
+                     (" GENRES LIKE '%" + genreToString(category) + "%'");
     queryString += " ORDER BY -UPDATE_TIME LIMIT 50 OFFSET :offset";
 
     session sql(*pool);
@@ -197,17 +196,17 @@ protected:
 
   Manga *toManga(const row &row, bool showDetails = false) {
     if (showDetails) {
-      vector<Category> categories;
-      for (string category : split(row.get<string>("CATEGORIES"), R"(\|)"))
-        categories.push_back(stringToCategory(category));
+      vector<Genre> genres;
+      for (string category : split(row.get<string>("GENRES"), R"(\|)"))
+        genres.push_back(stringToGenre(category));
       int *updateTime = new int(row.get<int>("UPDATE_TIME"));
 
       return new DetailsManga(
           this, row.get<string>("ID"), row.get<string>("TITLE"),
           row.get<string>("THUMBNAIL"), row.get<string>("LATEST"),
           split(row.get<string>("AUTHORS"), R"(\|)"),
-          row.get<int>("IS_ENDED") == 1, row.get<string>("DESCRIPTION"),
-          categories, {{}, {}, row.get<string>("EXTRA_DATA")}, updateTime);
+          row.get<int>("IS_ENDED") == 1, row.get<string>("DESCRIPTION"), genres,
+          {{}, {}, row.get<string>("EXTRA_DATA")}, updateTime);
     } else {
       return new Manga(this, row.get<string>("ID"), row.get<string>("TITLE"),
                        row.get<string>("THUMBNAIL"), row.get<string>("LATEST"),

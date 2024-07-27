@@ -24,7 +24,7 @@ DM5::DM5() {
   supportSuggestion = true;
   recommendedChunkSize = 10;
   for (const auto &pair : categoryId)
-    supportedCategories.push_back(pair.first);
+    supportedGenres.push_back(pair.first);
 
   proxyHeaders = {{"referer", "https://www.manhuaren.com"}};
 }
@@ -95,7 +95,7 @@ vector<string> DM5::getChapter(string id, string extraData) {
   return result;
 };
 
-vector<Manga *> DM5::getList(Category category, int page, Status status) {
+vector<Manga *> DM5::getList(Genre category, int page, Status status) {
   cpr::Response r = cpr::Get(
       cpr::Url{baseUrl + "manhua-list-tag" + to_string(categoryId[category]) +
                "-st" + to_string(status) + "-p" + to_string(page)},
@@ -294,20 +294,20 @@ Manga *DM5::extractDetails(Node *node, const string &id,
 
   delete infoNode;
 
-  vector<Node *> categoriesNode = tipNode->findAll("a");
-  vector<Category> categories;
+  vector<Node *> genresNode = tipNode->findAll("a");
+  vector<Genre> genres;
 
   string temp;
-  for (Node *node : categoriesNode) {
+  for (Node *node : genresNode) {
     temp = node->getAttribute("href");
     temp = temp.substr(8, temp.length() - 9);
 
     if (categoryText.find(temp) != categoryText.end()) {
-      categories.push_back(categoryText[temp]);
+      genres.push_back(categoryText[temp]);
     }
   }
 
-  releaseMemory(categoriesNode);
+  releaseMemory(genresNode);
   delete tipNode;
 
   auto pushChapters = [](Node *node, vector<Chapter> &chapters) {
@@ -341,7 +341,7 @@ Manga *DM5::extractDetails(Node *node, const string &id,
   delete extraNode;
 
   return new DetailsManga(this, id, title, thumbnail, latest, authors, isEnded,
-                          description, categories, {serial, extra, ""});
+                          description, genres, {serial, extra, ""});
 }
 
 vector<string> DM5::decodeChapters(const string &encoded, const int &len1,

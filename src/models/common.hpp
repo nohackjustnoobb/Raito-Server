@@ -21,10 +21,10 @@ enum Status {
   Ended,
 };
 
-enum Category {
+enum Genre {
   All,
-  Passionate,
-  Love,
+  HotBlooded,
+  Romance,
   Campus,
   Yuri,
   Otokonoko,
@@ -40,7 +40,7 @@ enum Category {
   Magic,
   Horror,
   Ghosts,
-  History,
+  Historical,
   FanFi,
   Sports,
   Hentai,
@@ -48,20 +48,18 @@ enum Category {
   Restricted,
 };
 
-static string categoryString[] = {
-    "All",         "Passionate", "Love",    "Campus", "Yuri",   "Otokonoko",
+static string genreString[] = {
+    "All",         "HotBlooded", "Romance", "Campus", "Yuri",   "Otokonoko",
     "BL",          "Adventure",  "Harem",   "SciFi",  "War",    "Suspense",
     "Speculation", "Funny",      "Fantasy", "Magic",  "Horror", "Ghosts",
-    "History",     "FanFi",      "Sports",  "Hentai", "Mecha",  "Restricted"};
+    "Historical",  "FanFi",      "Sports",  "Hentai", "Mecha",  "Restricted"};
 
-static string categoryToString(Category category) {
-  return categoryString[category];
-}
+static string genreToString(Genre category) { return genreString[category]; }
 
-static Category stringToCategory(string category) {
-  for (int i = 0; i < sizeof(categoryString) / sizeof(categoryString[0]); i++) {
-    if (category == categoryString[i])
-      return (Category)i;
+static Genre stringToGenre(string category) {
+  for (int i = 0; i < sizeof(genreString) / sizeof(genreString[0]); i++) {
+    if (category == genreString[i])
+      return (Genre)i;
   }
 
   return All;

@@ -18,7 +18,7 @@ public:
 
   vector<string> getChapter(string id, string extraData) override;
 
-  vector<Manga *> getList(Category category, int page, Status status) override;
+  vector<Manga *> getList(Genre category, int page, Status status) override;
 
   vector<string> getSuggestion(string keyword) override;
 
@@ -27,15 +27,15 @@ public:
   bool checkOnline() override;
 
 private:
-  map<Category, int> categoryId = {
-      {All, 0},     {Passionate, 31}, {Love, 26},      {Campus, 1},
+  map<Genre, int> categoryId = {
+      {All, 0},     {HotBlooded, 31}, {Romance, 26},   {Campus, 1},
       {Yuri, 3},    {BL, 27},         {Adventure, 2},  {Harem, 8},
       {SciFi, 25},  {War, 12},        {Suspense, 17},  {Speculation, 33},
       {Funny, 37},  {Fantasy, 14},    {Magic, 15},     {Horror, 29},
-      {Ghosts, 20}, {History, 4},     {FanFi, 30},     {Sports, 34},
+      {Ghosts, 20}, {Historical, 4},  {FanFi, 30},     {Sports, 34},
       {Hentai, 36}, {Mecha, 40},      {Restricted, 61}};
-  map<string, Category> categoryText = {
-      {"rexue", Passionate},    {"aiqing", Love},
+  map<string, Genre> categoryText = {
+      {"rexue", HotBlooded},    {"aiqing", Romance},
       {"xiaoyuan", Campus},     {"baihe", Yuri},
       {"caihong", BL},          {"maoxian", Adventure},
       {"hougong", Harem},       {"kehuan", SciFi},
@@ -43,7 +43,7 @@ private:
       {"zhentan", Speculation}, {"gaoxiao", Funny},
       {"qihuan", Fantasy},      {"mofa", Magic},
       {"kongbu", Horror},       {"dongfangshengui", Ghosts},
-      {"lishi", History},       {"tongren", FanFi},
+      {"lishi", Historical},    {"tongren", FanFi},
       {"jingji", Sports},       {"jiecao", Hentai},
       {"jizhan", Mecha},        {"list-tag61", Restricted}};
   string baseUrl = "https://www.dm5.com/";

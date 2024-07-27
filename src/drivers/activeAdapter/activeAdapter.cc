@@ -19,7 +19,7 @@
 ActiveAdapter::ActiveAdapter(ActiveDriver *driver) : driver(driver) {
   id = driver->id;
   proxyHeaders = driver->proxyHeaders;
-  supportedCategories = driver->supportedCategories;
+  supportedGenres = driver->supportedGenres;
   version = driver->version;
   supportSuggestion = true;
 
@@ -164,11 +164,11 @@ void ActiveAdapter::mainLoop() {
         DetailsManga *manga =
             (DetailsManga *)driver->getManga({id}, true, proxy).at(0);
 
-        ostringstream categories;
-        for (size_t i = 0; i < manga->categories.size(); ++i) {
-          categories << categoryToString(manga->categories[i]);
-          if (i < manga->categories.size() - 1)
-            categories << "|";
+        ostringstream genres;
+        for (size_t i = 0; i < manga->genres.size(); ++i) {
+          genres << genreToString(manga->genres[i]);
+          if (i < manga->genres.size() - 1)
+            genres << "|";
         }
 
         session sql(*pool);
@@ -176,14 +176,14 @@ void ActiveAdapter::mainLoop() {
 
         // update the manga info
         sql << "REPLACE INTO MANGA (ID, THUMBNAIL, TITLE, DESCRIPTION, "
-               "IS_ENDED, AUTHORS, CATEGORIES, LATEST, UPDATE_TIME, "
+               "IS_ENDED, AUTHORS, GENRES, LATEST, UPDATE_TIME, "
                "EXTRA_DATA) VALUES (:id, :thumbnail, :title, :description, "
-               ":is_ended, :authors, :categories, :latest, :update_time, "
+               ":is_ended, :authors, :genres, :latest, :update_time, "
                ":extras_data)",
             use(manga->id), use(manga->thumbnail), use(manga->title),
             use(manga->description), use((int)manga->isEnded),
             use(fmt::format("{}", fmt::join(manga->authors, "|"))),
-            use(categories.str()), use(manga->latest),
+            use(genres.str()), use(manga->latest),
             use(chrono::duration_cast<chrono::seconds>(
                     chrono::system_clock::now().time_since_epoch())
                     .count()),
