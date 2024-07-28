@@ -18,7 +18,7 @@ public:
 
   vector<string> getChapter(string id, string extraData) override;
 
-  vector<Manga *> getList(Genre category, int page, Status status) override;
+  vector<Manga *> getList(Genre genre, int page, Status status) override;
 
   vector<string> getSuggestion(string keyword) override;
 
@@ -27,14 +27,14 @@ public:
   bool checkOnline() override;
 
 private:
-  map<Genre, int> categoryId = {
+  map<Genre, int> genreId = {
       {All, 0},     {HotBlooded, 31}, {Romance, 26},   {Campus, 1},
       {Yuri, 3},    {BL, 27},         {Adventure, 2},  {Harem, 8},
       {SciFi, 25},  {War, 12},        {Suspense, 17},  {Speculation, 33},
       {Funny, 37},  {Fantasy, 14},    {Magic, 15},     {Horror, 29},
       {Ghosts, 20}, {Historical, 4},  {FanFi, 30},     {Sports, 34},
       {Hentai, 36}, {Mecha, 40},      {Restricted, 61}};
-  map<string, Genre> categoryText = {
+  map<string, Genre> gerneText = {
       {"rexue", HotBlooded},    {"aiqing", Romance},
       {"xiaoyuan", Campus},     {"baihe", Yuri},
       {"caihong", BL},          {"maoxian", Adventure},

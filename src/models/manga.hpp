@@ -145,8 +145,8 @@ public:
     result["chapters"] = chapters.toJson();
 
     vector<string> genresString;
-    for (Genre category : genres)
-      genresString.push_back(genreToString(category));
+    for (Genre genre : genres)
+      genresString.push_back(genreToString(genre));
 
     result["genres"] = genresString;
 
@@ -160,8 +160,8 @@ public:
 
   static DetailsManga *fromJson(const json &data) {
     vector<Genre> genres;
-    for (string category : data["genres"])
-      genres.push_back(stringToGenre(category));
+    for (string genre : data["genres"])
+      genres.push_back(stringToGenre(genre));
 
     int *updateTime;
     if (data.contains("updateTime") && !data["updateTime"].is_null())

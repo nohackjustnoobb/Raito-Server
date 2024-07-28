@@ -24,7 +24,7 @@ MHR::MHR() {
   version = "1.0.0-beta.5";
 
   supportSuggestion = true;
-  for (const auto &pair : categoryId)
+  for (const auto &pair : genreId)
     supportedGenres.push_back(pair.first);
 
   proxyHeaders = {{"referer", "http://www.dm5.com/dm5api/"}};
@@ -143,11 +143,11 @@ vector<string> MHR::getChapter(string id, string extraData) {
   return result;
 };
 
-vector<Manga *> MHR::getList(Genre category, int page, Status status) {
+vector<Manga *> MHR::getList(Genre genre, int page, Status status) {
 
   map<string, string> query = {
       {"subCategoryType", "0"},
-      {"subCategoryId", to_string(categoryId[category])},
+      {"subCategoryId", to_string(genreId[genre])},
       {"start", to_string((page - 1) * 50)},
       {"status", to_string(status)},
       {"limit", "50"},
@@ -330,7 +330,7 @@ Manga *MHR::convertDetails(const json &data) {
   vector<Genre> genres;
   string rawGenresText = data["mangaTheme"].get<string>();
 
-  for (const auto &pair : categoryText) {
+  for (const auto &pair : genreText) {
     if (rawGenresText.find(pair.first) != string::npos) {
       genres.push_back(pair.second);
     }

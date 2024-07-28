@@ -107,8 +107,8 @@ auto getDriverInfo = [](const HttpRequestPtr &req,
   GET_DRIVER()
 
   vector<string> genres;
-  for (Genre category : driver->supportedGenres)
-    genres.push_back(genreToString(category));
+  for (Genre genre : driver->supportedGenres)
+    genres.push_back(genreToString(genre));
 
   json info;
   info["supportedGenres"] = genres;
@@ -169,10 +169,10 @@ auto getList = [](const HttpRequestPtr &req,
 
   GET_PROXY()
 
-  Genre category = All;
-  string tryCategory = req->getParameter("category");
-  if (tryCategory != "")
-    category = stringToGenre(tryCategory);
+  Genre genre = All;
+  string tryGenre = req->getParameter("genre");
+  if (tryGenre != "")
+    genre = stringToGenre(tryGenre);
 
   Status status = Any;
   string tryStatus = req->getParameter("status");
@@ -186,7 +186,7 @@ auto getList = [](const HttpRequestPtr &req,
   }
 
   try {
-    vector<Manga *> mangas = driver->getList(category, page, status);
+    vector<Manga *> mangas = driver->getList(genre, page, status);
     json result = json::array();
     for (Manga *manga : mangas) {
       if (proxy)

@@ -37,7 +37,7 @@ public:
 
   // Return a list of manga for the given information.
   // The size of the returned list should be limited to 50.
-  virtual vector<Manga *> getList(Genre category, int page, Status status) = 0;
+  virtual vector<Manga *> getList(Genre genre, int page, Status status) = 0;
 
   // Return a list of suggestions for the given keyword.
   // The size of the returned list should be limited to 5.

@@ -54,11 +54,11 @@ static string genreString[] = {
     "Speculation", "Funny",      "Fantasy", "Magic",  "Horror", "Ghosts",
     "Historical",  "FanFi",      "Sports",  "Hentai", "Mecha",  "Restricted"};
 
-static string genreToString(Genre category) { return genreString[category]; }
+static string genreToString(Genre genre) { return genreString[genre]; }
 
-static Genre stringToGenre(string category) {
+static Genre stringToGenre(string genre) {
   for (int i = 0; i < sizeof(genreString) / sizeof(genreString[0]); i++) {
-    if (category == genreString[i])
+    if (genre == genreString[i])
       return (Genre)i;
   }
 

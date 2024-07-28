@@ -29,7 +29,7 @@ MHG::MHG() {
   recommendedChunkSize = 5;
   timeout = 10;
 
-  for (const auto &pair : categoryText)
+  for (const auto &pair : genreText)
     supportedGenres.push_back(pair.first);
 
   proxyHeaders = {{"referer", "https://tw.manhuagui.com"}};
@@ -111,15 +111,15 @@ vector<string> MHG::getChapter(string id, string extraData, string proxy) {
   return result;
 };
 
-vector<Manga *> MHG::getList(Genre category, int page, Status status) {
+vector<Manga *> MHG::getList(Genre genre, int page, Status status) {
   string url = baseUrl + "list/";
   string filter;
 
-  if (category != All)
-    filter += categoryText[category];
+  if (genre != All)
+    filter += genreText[genre];
 
   if (status != Any) {
-    if (category != All)
+    if (genre != All)
       filter += "_";
     filter += status == OnGoing ? "lianzai" : "wanjie";
   }
@@ -262,7 +262,7 @@ Manga *MHG::extractDetails(Node *node, const string &id,
     temp = node->getAttribute("href");
     temp = temp.substr(6, temp.length() - 7);
 
-    for (const auto &pair : categoryText) {
+    for (const auto &pair : genreText) {
       if (pair.second == temp) {
         genres.push_back(pair.first);
       }

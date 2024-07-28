@@ -23,7 +23,7 @@ DM5::DM5() {
 
   supportSuggestion = true;
   recommendedChunkSize = 10;
-  for (const auto &pair : categoryId)
+  for (const auto &pair : genreId)
     supportedGenres.push_back(pair.first);
 
   proxyHeaders = {{"referer", "https://www.manhuaren.com"}};
@@ -95,10 +95,10 @@ vector<string> DM5::getChapter(string id, string extraData) {
   return result;
 };
 
-vector<Manga *> DM5::getList(Genre category, int page, Status status) {
+vector<Manga *> DM5::getList(Genre genre, int page, Status status) {
   cpr::Response r = cpr::Get(
-      cpr::Url{baseUrl + "manhua-list-tag" + to_string(categoryId[category]) +
-               "-st" + to_string(status) + "-p" + to_string(page)},
+      cpr::Url{baseUrl + "manhua-list-tag" + to_string(genreId[genre]) + "-st" +
+               to_string(status) + "-p" + to_string(page)},
       cpr::Timeout{TIMEOUT_LIMIT}, header);
 
   CHECK_TIMEOUT()
@@ -302,8 +302,8 @@ Manga *DM5::extractDetails(Node *node, const string &id,
     temp = node->getAttribute("href");
     temp = temp.substr(8, temp.length() - 9);
 
-    if (categoryText.find(temp) != categoryText.end()) {
-      genres.push_back(categoryText[temp]);
+    if (gerneText.find(temp) != gerneText.end()) {
+      genres.push_back(gerneText[temp]);
     }
   }
 

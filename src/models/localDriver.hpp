@@ -16,7 +16,7 @@ using namespace soci;
     throw "Database is offline";
 
 #define CREATE_MANGA_TABLES_SQL                                                \
-  R"(CREATE TABLE IF NOT EXISTS "MANGA"("ID" VARCHAR(255) NOT NULL PRIMARY KEY, "AUTHORS" VARCHAR(255) NOT NULL, "GENRES" VARCHAR(255) NOT NULL, "DESCRIPTION" TEXT NOT NULL, "IS_ENDED" INTEGER NOT NULL, "LATEST" VARCHAR(255) NOT NULL, "THUMBNAIL" VARCHAR(255) NOT NULL, "TITLE" VARCHAR(255) NOT NULL, "UPDATE_TIME" INTEGER NOT NULL, "EXTRA_DATA" VARCHAR(255) NOT NULL);)"
+  R"(CREATE TABLE IF NOT EXISTS "MANGA"("ID" VARCHAR(255) NOT NULL PRIMARY KEY, "AUTHORS" VARCHAR(255) NOT NULL, "GENRES" TEXT NOT NULL, "DESCRIPTION" TEXT NOT NULL, "IS_ENDED" INTEGER NOT NULL, "LATEST" VARCHAR(255) NOT NULL, "THUMBNAIL" VARCHAR(255) NOT NULL, "TITLE" VARCHAR(255) NOT NULL, "UPDATE_TIME" INTEGER NOT NULL, "EXTRA_DATA" VARCHAR(255) NOT NULL);)"
 
 #define CREATE_CHAPTER_TABLES_SQL                                              \
   R"(CREATE TABLE IF NOT EXISTS "CHAPTER" ("MANGA_ID" VARCHAR(255) NOT NULL, "ID" VARCHAR(255) NOT NULL, "IDX" INTEGER NOT NULL, "IS_EXTRA" INTEGER NOT NULL, "TITLE" VARCHAR(255) NOT NULL, "URLS" TEXT, PRIMARY KEY ("MANGA_ID", "ID"), FOREIGN KEY ("MANGA_ID") REFERENCES "MANGA" ("ID")); CREATE INDEX "chaptermodel_MANGA_ID" ON "CHAPTER" ("MANGA_ID");)"
@@ -27,22 +27,16 @@ public:
                                    bool showDetails) override {
     CHECK_ONLINE()
 
-    ostringstream oss;
-    oss << "'";
-    for (size_t i = 0; i < ids.size(); ++i) {
+    vector<string> filteredIds;
+    for (const auto &id : ids)
       // prevent SQL injection
-      if (RE2::FullMatch(ids[i],
-                         R"(^[A-Za-z0-9\-_.~!#$&'()*+,\/:;=?@\[\]]*$)")) {
-        oss << ids[i];
-        if (i < ids.size() - 1)
-          oss << "','";
-      }
-    }
-    oss << "'";
+      if (RE2::FullMatch(id, R"(^[A-Za-z0-9\-_.~!#$&'()*+,\/:;=?@\[\]]*$)"))
+        filteredIds.push_back(id);
 
     session sql(*pool);
-    rowset<row> rs = sql.prepare << fmt::format(
-                         "SELECT * FROM MANGA WHERE ID IN ({})", oss.str());
+    rowset<row> rs = sql.prepare
+                     << fmt::format("SELECT * FROM MANGA WHERE ID IN ('{}')",
+                                    fmt::join(filteredIds, "','"));
 
     map<string, Manga *> resultMap;
     for (auto it = rs.begin(); it != rs.end(); it++) {
@@ -54,8 +48,8 @@ public:
     if (showDetails) {
       // Get the chapters
       rs = sql.prepare << fmt::format("SELECT * FROM CHAPTER WHERE MANGA_ID IN "
-                                      "({}) ORDER BY MANGA_ID, -IDX",
-                                      oss.str());
+                                      "('{}') ORDER BY MANGA_ID, -IDX",
+                                      fmt::join(filteredIds, "','"));
 
       for (auto it = rs.begin(); it != rs.end(); it++) {
         const row &row = *it;
@@ -95,16 +89,16 @@ public:
     return split(urls, R"(\|)");
   }
 
-  virtual vector<Manga *> getList(Genre category, int page,
+  virtual vector<Manga *> getList(Genre genre, int page,
                                   Status status) override {
     CHECK_ONLINE()
 
     string queryString = "SELECT * FROM MANGA";
     if (status != Any)
       queryString += " WHERE IS_ENDED = " + to_string(status == Ended);
-    if (category != All)
+    if (genre != All)
       queryString += (status == Any ? " WHERE" : " AND") +
-                     (" GENRES LIKE '%" + genreToString(category) + "%'");
+                     (" GENRES LIKE '%" + genreToString(genre) + "%'");
     queryString += " ORDER BY -UPDATE_TIME LIMIT 50 OFFSET :offset";
 
     session sql(*pool);
@@ -197,8 +191,8 @@ protected:
   Manga *toManga(const row &row, bool showDetails = false) {
     if (showDetails) {
       vector<Genre> genres;
-      for (string category : split(row.get<string>("GENRES"), R"(\|)"))
-        genres.push_back(stringToGenre(category));
+      for (string genre : split(row.get<string>("GENRES"), R"(\|)"))
+        genres.push_back(stringToGenre(genre));
       int *updateTime = new int(row.get<int>("UPDATE_TIME"));
 
       return new DetailsManga(

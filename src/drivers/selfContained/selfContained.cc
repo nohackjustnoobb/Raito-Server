@@ -46,21 +46,20 @@ Manga *SelfContained::createManga(DetailsManga *manga) {
   // Insert the manga
   session sql(*pool);
 
-  ostringstream genres;
-  for (size_t i = 0; i < manga->genres.size(); ++i) {
-    genres << genreToString(manga->genres[i]);
-    if (i < manga->genres.size() - 1)
-      genres << "|";
-  }
+  string encodedAuthors = fmt::format("{}", fmt::join(manga->authors, "|"));
+
+  vector<string> genres;
+  for (const auto &genre : manga->genres)
+    genres.push_back(genreToString(genre));
+  string encodedGenres = fmt::format("{}", fmt::join(genres, "|"));
 
   sql << "INSERT INTO MANGA (ID, THUMBNAIL, TITLE, DESCRIPTION, IS_ENDED, "
          "AUTHORS, GENRES, LATEST, UPDATE_TIME, EXTRA_DATA) VALUES (:id, "
          ":thumbnail, :title, :description, :is_ended, :authors, "
          ":genres, :latest, :update_time, :extras_data)",
       use(manga->id), use(manga->thumbnail), use(manga->title),
-      use(manga->description), use((int)manga->isEnded),
-      use(fmt::format("{}", fmt::join(manga->authors, "|"))), use(genres.str()),
-      use(manga->latest), use(*manga->updateTime),
+      use(manga->description), use((int)manga->isEnded), use(encodedAuthors),
+      use(encodedGenres), use(manga->latest), use(*manga->updateTime),
       use(manga->chapters.extraData);
 
   row r;
@@ -78,19 +77,18 @@ Manga *SelfContained::editManga(DetailsManga *manga) {
   // Insert the manga
   session sql(*pool);
 
-  ostringstream genres;
-  for (size_t i = 0; i < manga->genres.size(); ++i) {
-    genres << genreToString(manga->genres[i]);
-    if (i < manga->genres.size() - 1)
-      genres << "|";
-  }
+  string encodedAuthors = fmt::format("{}", fmt::join(manga->authors, "|"));
+
+  vector<string> genres;
+  for (const auto &genre : manga->genres)
+    genres.push_back(genreToString(genre));
+  string encodedGenres = fmt::format("{}", fmt::join(genres, "|"));
 
   sql << "UPDATE MANGA SET TITLE = :title, DESCRIPTION = :description, "
          "IS_ENDED = :is_ended, AUTHORS = :authors, GENRES = "
          ":genres WHERE ID = :id",
       use(manga->title), use(manga->description), use((int)manga->isEnded),
-      use(fmt::format("{}", fmt::join(manga->authors, "|"))), use(genres.str()),
-      use(manga->id);
+      use(encodedAuthors), use(encodedGenres), use(manga->id);
 
   Manga *newManga = getManga({manga->id}, true).at(0);
 
