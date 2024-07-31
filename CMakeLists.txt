@@ -19,10 +19,8 @@ find_package(fmt REQUIRED CONFIG)
 find_package(cpr CONFIG REQUIRED)
 find_package(re2 REQUIRED)
 find_package(freeimage REQUIRED)
-find_package(SOCI REQUIRED)
+find_package(SOCI REQUIRED CONFIG)
 find_package(rapidfuzz REQUIRED)
-
-# dependencies for DM5
 find_package(lexbor REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
@@ -35,7 +33,5 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     freeimage::freeimage
     soci::soci
     rapidfuzz::rapidfuzz
-
-    # dependencies for DM5
     lexbor::lexbor_static
 )

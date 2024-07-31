@@ -1,6 +1,7 @@
 #include "drogon.hpp"
 
 #include "../drivers/selfContained/selfContained.hpp"
+#include "../manager/accessGuard.hpp"
 #include "../manager/driversManager.hpp"
 #include "../models/manga.hpp"
 #include "../utils/base64.hpp"
@@ -27,12 +28,12 @@
 
 #define GET_DRIVER()                                                           \
   string driverId = req->getParameter("driver");                               \
-  if (driversManager.cmsId != nullptr &&                                       \
-      RE2::FullMatch(req->path(), R"(^\/admin.*$)"))                           \
-    driverId = *driversManager.cmsId;                                          \
-  if (driverId == "") {                                                        \
+  bool isAdmin = RE2::FullMatch(req->path(), R"(^\/admin.*$)");                \
+  if (driverId == "" && !isAdmin) {                                            \
     JSON_404_RESPONSE(R"({"error":"\"driver\" is missing."})")                 \
   }                                                                            \
+  if (driversManager.cmsId != nullptr && isAdmin)                              \
+    driverId = *driversManager.cmsId;                                          \
   BaseDriver *driver = driversManager.get(driverId);                           \
   if (driver == nullptr) {                                                     \
     JSON_404_RESPONSE(R"({"error":"Driver is not found."})")                   \
@@ -73,11 +74,14 @@
     JSON_400_RESPONSE(R"({"error":"\"keyword\" is missing."})")                \
   }
 
+#define CHECK_MODE()                                                           \
+  if (accessGuard.mode != "token") {                                           \
+    JSON_400_RESPONSE(                                                         \
+        R"({"error":"AccessGuard is not set to "token" mode."})")              \
+  }
+
 namespace drogonServer {
 string *webpageUrl;
-string *accessKey;
-string *adminAccessKey;
-bool adminAllowOnlyLocal;
 string serverVersion;
 Converter converter;
 } // namespace drogonServer
@@ -404,19 +408,20 @@ auto getImage = [](const HttpRequestPtr &req,
 auto createOrEditManga = [](const HttpRequestPtr &req,
                             function<void(const HttpResponsePtr &)>
                                 &&callback) {
+  GET_DRIVER()
+
   try {
     // Parse the body
     json body = json::parse(req->getBody());
     DetailsManga *manga = DetailsManga::fromJson(body);
 
-    SelfContained *driver =
-        (SelfContained *)driversManager.get(*driversManager.cmsId);
+    SelfContained *castedDriver = (SelfContained *)driver;
 
     Manga *result;
     if (req->getMethod() == Post)
-      result = driver->createManga(manga);
+      result = castedDriver->createManga(manga);
     else
-      result = driver->editManga(manga);
+      result = castedDriver->editManga(manga);
 
     JSON_RESPONSE(result->toJson().dump());
 
@@ -429,16 +434,17 @@ auto createOrEditManga = [](const HttpRequestPtr &req,
 
 auto deleteManga = [](const HttpRequestPtr &req,
                       function<void(const HttpResponsePtr &)> &&callback) {
+  GET_DRIVER()
+
   try {
     string id = req->getParameter("id");
     if (id == "") {
       JSON_400_RESPONSE(R"({"error":"\"id\" is missing."})")
     }
 
-    SelfContained *driver =
-        (SelfContained *)driversManager.get(*driversManager.cmsId);
+    SelfContained *castedDriver = (SelfContained *)driver;
 
-    driver->deleteManga(id);
+    castedDriver->deleteManga(id);
 
     HttpResponsePtr resp = HttpResponse::newHttpResponse();
     resp->setStatusCode(k204NoContent);
@@ -452,6 +458,8 @@ auto deleteManga = [](const HttpRequestPtr &req,
 
 auto createChapter = [](const HttpRequestPtr &req,
                         function<void(const HttpResponsePtr &)> &&callback) {
+  GET_DRIVER()
+
   try {
     // Parse the body
     json body = json::parse(req->getBody());
@@ -463,11 +471,11 @@ auto createChapter = [](const HttpRequestPtr &req,
       }
     }
 
-    SelfContained *driver =
-        (SelfContained *)driversManager.get(*driversManager.cmsId);
-    Chapters result = driver->createChapter(body["extraData"].get<string>(),
-                                            body["title"].get<string>(),
-                                            body["isExtra"].get<bool>());
+    SelfContained *castedDriver = (SelfContained *)driver;
+
+    Chapters result = castedDriver->createChapter(
+        body["extraData"].get<string>(), body["title"].get<string>(),
+        body["isExtra"].get<bool>());
 
     JSON_RESPONSE(result.toJson().dump());
   } catch (...) {
@@ -478,14 +486,16 @@ auto createChapter = [](const HttpRequestPtr &req,
 
 auto editChapters = [](const HttpRequestPtr &req,
                        function<void(const HttpResponsePtr &)> &&callback) {
+  GET_DRIVER()
+
   try {
     // Parse the body
     json body = json::parse(req->getBody());
     Chapters chapters = Chapters::fromJson(body);
 
-    SelfContained *driver =
-        (SelfContained *)driversManager.get(*driversManager.cmsId);
-    Chapters result = driver->editChapters(chapters);
+    SelfContained *castedDriver = (SelfContained *)driver;
+
+    Chapters result = castedDriver->editChapters(chapters);
 
     JSON_RESPONSE(result.toJson().dump());
   } catch (...) {
@@ -496,6 +506,8 @@ auto editChapters = [](const HttpRequestPtr &req,
 
 auto deleteChapter = [](const HttpRequestPtr &req,
                         function<void(const HttpResponsePtr &)> &&callback) {
+  GET_DRIVER()
+
   try {
     string id = req->getParameter("id");
     if (id == "") {
@@ -507,10 +519,9 @@ auto deleteChapter = [](const HttpRequestPtr &req,
       JSON_400_RESPONSE(R"({"error":"\"extra-data\" is missing."})")
     }
 
-    SelfContained *driver =
-        (SelfContained *)driversManager.get(*driversManager.cmsId);
+    SelfContained *castedDriver = (SelfContained *)driver;
 
-    driver->deleteChapter(id, extraData);
+    castedDriver->deleteChapter(id, extraData);
 
     HttpResponsePtr resp = HttpResponse::newHttpResponse();
     resp->setStatusCode(k204NoContent);
@@ -524,8 +535,9 @@ auto deleteChapter = [](const HttpRequestPtr &req,
 
 auto uploadImage = [](const HttpRequestPtr &req,
                       function<void(const HttpResponsePtr &)> &&callback) {
-  try {
+  GET_DRIVER()
 
+  try {
     string id = req->getParameter("id");
     if (id == "") {
       JSON_400_RESPONSE(R"({"error":"\"id\" is missing."})")
@@ -533,8 +545,8 @@ auto uploadImage = [](const HttpRequestPtr &req,
     string extraData = req->getParameter("extra-data");
 
     string contentType = req->getHeader("content-type");
-    SelfContained *driver =
-        (SelfContained *)driversManager.get(*driversManager.cmsId);
+
+    SelfContained *castedDriver = (SelfContained *)driver;
 
     if (contentType.find("application/json") != string::npos &&
         extraData != "") {
@@ -551,9 +563,10 @@ auto uploadImage = [](const HttpRequestPtr &req,
         decoded.push_back(base64::from_base64(encoded.get<string>()));
 
       json result = json::array();
-      vector<string> urls = driver->uploadMangaImages(id, extraData, decoded);
+      vector<string> urls =
+          castedDriver->uploadMangaImages(id, extraData, decoded);
       for (const string &url : urls)
-        result.push_back(driver->useProxy(url, "manga", baseUrl));
+        result.push_back(castedDriver->useProxy(url, "manga", baseUrl));
 
       JSON_RESPONSE(result.dump());
     } else {
@@ -562,8 +575,9 @@ auto uploadImage = [](const HttpRequestPtr &req,
         image = base64::from_base64(image);
 
       vector<string> result =
-          extraData == "" ? driver->uploadThumbnail(id, image)
-                          : driver->uploadMangaImage(id, extraData, image);
+          extraData == ""
+              ? castedDriver->uploadThumbnail(id, image)
+              : castedDriver->uploadMangaImage(id, extraData, image);
 
       HttpResponsePtr resp = HttpResponse::newHttpResponse();
       resp->setContentTypeString(mime_types.at(result[0]));
@@ -581,6 +595,8 @@ auto uploadImage = [](const HttpRequestPtr &req,
 auto arrangeMangaImage = [](const HttpRequestPtr &req,
                             function<void(const HttpResponsePtr &)>
                                 &&callback) {
+  GET_DRIVER()
+
   try {
     string id = req->getParameter("id");
     if (id == "") {
@@ -600,13 +616,13 @@ auto arrangeMangaImage = [](const HttpRequestPtr &req,
 
     vector<string> urls = json::parse(req->getBody());
 
-    SelfContained *driver =
-        (SelfContained *)driversManager.get(*driversManager.cmsId);
-    urls = driver->arrangeMangaImage(id, extraData, urls);
+    SelfContained *castedDriver = (SelfContained *)driver;
+
+    urls = castedDriver->arrangeMangaImage(id, extraData, urls);
 
     json result = json::array();
     for (const string &url : urls)
-      result.push_back(driver->useProxy(url, "manga", baseUrl));
+      result.push_back(castedDriver->useProxy(url, "manga", baseUrl));
 
     JSON_RESPONSE(result.dump())
   } catch (...) {
@@ -617,6 +633,8 @@ auto arrangeMangaImage = [](const HttpRequestPtr &req,
 
 auto deleteMangaImage = [](const HttpRequestPtr &req,
                            function<void(const HttpResponsePtr &)> &&callback) {
+  GET_DRIVER()
+
   try {
     string id = req->getParameter("id");
     if (id == "") {
@@ -633,10 +651,9 @@ auto deleteMangaImage = [](const HttpRequestPtr &req,
       JSON_400_RESPONSE(R"({"error":"\"url\" is missing."})")
     }
 
-    SelfContained *driver =
-        (SelfContained *)driversManager.get(*driversManager.cmsId);
+    SelfContained *castedDriver = (SelfContained *)driver;
 
-    driver->deleteMangaImage(id, extraData, url);
+    castedDriver->deleteMangaImage(id, extraData, url);
 
     HttpResponsePtr resp = HttpResponse::newHttpResponse();
     resp->setStatusCode(k204NoContent);
@@ -648,12 +665,96 @@ auto deleteMangaImage = [](const HttpRequestPtr &req,
   }
 };
 
-void startDrogonServer(int port, string *_webpageUrl, string *_accessKey,
-                       string *_adminAccessKey, bool _adminAllowOnlyLocal) {
+auto getToken = [](const HttpRequestPtr &req,
+                   function<void(const HttpResponsePtr &)> &&callback) {
+  CHECK_MODE()
+
+  GET_PAGE()
+
+  try {
+    string id = req->getParameter("id");
+    json result = accessGuard.getToken(id, page);
+
+    JSON_RESPONSE(result.dump());
+  } catch (...) {
+    JSON_400_RESPONSE(
+        R"({"error": "An unexpected error occurred when trying to get token."})")
+  }
+};
+
+auto createToken = [](const HttpRequestPtr &req,
+                      function<void(const HttpResponsePtr &)> &&callback) {
+  CHECK_MODE()
+
+  try {
+    // Parse the body
+    json body = json::parse(req->getBody());
+
+    if (!body.contains("id"))
+      body["id"] = "";
+
+    string token = accessGuard.createToken(body["id"].get<string>());
+
+    json result;
+    result["id"] = body["id"].get<string>();
+    result["token"] = token;
+
+    JSON_RESPONSE(result.dump());
+  } catch (...) {
+    JSON_400_RESPONSE(
+        R"({"error": "An unexpected error occurred when trying to create token."})")
+  }
+};
+
+auto removeToken = [](const HttpRequestPtr &req,
+                      function<void(const HttpResponsePtr &)> &&callback) {
+  CHECK_MODE()
+
+  try {
+    string id = req->getParameter("id");
+    if (id == "") {
+      JSON_400_RESPONSE(R"({"error":"\"id\" is missing."})")
+    }
+
+    accessGuard.removeToken(id);
+
+    HttpResponsePtr resp = HttpResponse::newHttpResponse();
+    resp->setStatusCode(k204NoContent);
+
+    return callback(resp);
+
+  } catch (...) {
+    JSON_400_RESPONSE(
+        R"({"error": "An unexpected error occurred when trying to remove token."})")
+  }
+};
+
+auto refreshToken = [](const HttpRequestPtr &req,
+                       function<void(const HttpResponsePtr &)> &&callback) {
+  CHECK_MODE()
+
+  try {
+    // Parse the body
+    json body = json::parse(req->getBody());
+
+    if (!body.contains("id"))
+      body["id"] = "";
+
+    string token = accessGuard.refreshToken(body["id"].get<string>());
+
+    json result;
+    result["id"] = body["id"].get<string>();
+    result["token"] = token;
+
+    JSON_RESPONSE(result.dump());
+  } catch (...) {
+    JSON_400_RESPONSE(
+        R"({"error": "An unexpected error occurred when trying to refresh token."})")
+  }
+};
+
+void startDrogonServer(int port, string *_webpageUrl) {
   webpageUrl = _webpageUrl;
-  accessKey = _accessKey;
-  adminAccessKey = _adminAccessKey;
-  adminAllowOnlyLocal = _adminAllowOnlyLocal;
   serverVersion = string(getenv("RAITO_SERVER_VERSION"));
   serverVersion += " (Drogon)";
 
@@ -706,15 +807,13 @@ void startDrogonServer(int port, string *_webpageUrl, string *_accessKey,
     // Check if it is admin panel
     bool isAdminPanel = RE2::FullMatch(req->path(), R"(^\/admin.*$)");
 
-    if (isAdminPanel && (!adminAllowOnlyLocal || isLocalIp(ip)) &&
-        (adminAccessKey == nullptr ||
-         req->getHeader("Access-Key") == *adminAccessKey))
+    if (isAdminPanel &&
+        accessGuard.verifyAdminKey(req->getHeader("Access-Key"), ip))
       return chainCallback();
 
     // Other requests
-    if (!isAdminPanel &&
-        (RE2::FullMatch(req->path(), R"(^\/image.*$)") ||
-         accessKey == nullptr || req->getHeader("Access-Key") == *accessKey))
+    if (!isAdminPanel && (RE2::FullMatch(req->path(), R"(^\/image.*$)") ||
+                          accessGuard.verifyKey(req->getHeader("Access-Key"))))
       return chainCallback();
 
     // If not matching any of the above conditions
@@ -760,6 +859,12 @@ void startDrogonServer(int port, string *_webpageUrl, string *_accessKey,
   app().registerHandler("/admin/image/edit", arrangeMangaImage, {Put, Options});
   app().registerHandler("/admin/image/edit", deleteMangaImage,
                         {Delete, Options});
+
+  // Access Guard
+  app().registerHandler("/admin/token", getToken, {Get, Options});
+  app().registerHandler("/admin/token", createToken, {Post, Options});
+  app().registerHandler("/admin/token", removeToken, {Delete, Options});
+  app().registerHandler("/admin/token", refreshToken, {Put, Options});
 
   log("Drogon", fmt::format("Listening on Port {}", port));
   app()

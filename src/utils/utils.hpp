@@ -6,6 +6,7 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <iomanip>
+#include <random>
 #include <re2/re2.h>
 #include <sstream>
 #include <string>
@@ -87,4 +88,18 @@ static bool isLocalIp(const string &ip) {
   return RE2::FullMatch(
       ip,
       R"((localhost|10\.([0-9]{1,3}\.){2}[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[0-1])\.([0-9]{1,3}\.)[0-9]{1,3}|192\.168\.([0-9]{1,3}\.)[0-9]{1,3}|127\.([0-9]{1,3}\.){2}[0-9]{1,3}):?\d*$)");
+}
+
+static string randomString(size_t length) {
+  auto randchar = []() -> char {
+    const char charset[] =
+        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    const size_t max_index = (sizeof(charset) - 1);
+    return charset[rand() % max_index];
+  };
+
+  string str(length, 0);
+  generate_n(str.begin(), length, randchar);
+
+  return str;
 }

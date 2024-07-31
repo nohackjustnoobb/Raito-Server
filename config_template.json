@@ -14,9 +14,6 @@
         // If not provided, some features will be disabled
         "webpageUrl": "http://example.com/"
     },
-    // Optional, if it is set, the users will need the same key to access the server
-    // default: ""
-    "accessKey": "exampleKey",
     "driver": {
         // Optional, the ids in the list will be excluded
         "exclude": [],
@@ -46,18 +43,34 @@
             // Optional, the id of the driver it must be unique
             // Default: "SC"
             "id": "SC",
-            // Optional, the access key for the admin interface
-            // Default: "" 
-            "accessKey": "exampleKey",
-            // Optional, Allow only the local ip address
-            // Default: true
-            "allowOnlyLocal": true,
             // Optional, the sql backend to use
             // Default: sqlite3
             "sql": "sqlite3",
             // Optional, the parameters of the sql backend
             // Default: ../data/{id}.sqlite3
             "parameters": "db=id.sqlite3"
+        }
+    },
+    "accessGuard": {
+        // Optional, the mode for the access control
+        // Options: "none", "key", "token"
+        // Default: "none"
+        "mode": "none",
+        // Optional, if mode set to "key", use will need this key to access the server
+        "key": "key",
+        // Optional, the sql backend to use
+        // Default: sqlite3
+        "sql": "sqlite3",
+        // Optional, the parameters of the sql backend
+        // Default: ../data/token.sqlite3
+        "parameters": "db=token.sqlite3",
+        "admin": {
+            // Optional, the access key for the admin interface
+            // Default: "" 
+            "key": "exampleKey",
+            // Optional, Allow only the local ip address
+            // Default: true
+            "allowOnlyLocal": true
         }
     },
     "image": {

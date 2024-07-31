@@ -30,6 +30,10 @@ Official link: [click here](https://www.dm5.com)
 
 This server can also be used as a CMS server by enabling the CMS in the configuration file. To access the management system, use the front-end from [Raito-Admin-Panel](https://github.com/nohackjustnoobb/Raito-Admin-Panel).
 
+## Access Guard
+
+There are several ways to protect the API, such as using keys and tokens. You can specify the mode in the configuration file. If the mode is set to key, users will need the same key to access the API. If the mode is set to token, you will need to use the [Raito-Admin-Panel](https://github.com/nohackjustnoobb/Raito-Admin-Panel) to manage the tokens. Each token is associated with a unique ID representing a user, and each user will need their own token to access the API. The token mode is designed to be used with the CMS enabled, but it can also be used alone. If used alone, the admin panel may warn that it cannot connect to the server; simply ignore the warning and click the token management button.
+
 ## Quick Start
 
 1. Create a `config.json` file based on the `config_template.json`.
@@ -84,3 +88,7 @@ chmod +x Raito-Server
 ```
 
 You can execute the commands one by one or copy all of them at once and create a shell script.
+
+## Known Issues
+
+There is a known issue where the `mysql.h` and `libpq-fe.h` headers are not able to be included due to an unknown cause. This issue prevents the use of both MySQL and PostgreSQL databases in the application.

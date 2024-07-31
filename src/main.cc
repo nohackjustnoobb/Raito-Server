@@ -1,3 +1,4 @@
+#include "manager/accessGuard.hpp"
 #include "manager/driversManager.hpp"
 #include "manager/imagesManager.hpp"
 #include "utils/utils.hpp"
@@ -20,7 +21,7 @@
 // #include <soci/postgresql/soci-postgresql.h>
 #include <string>
 
-#define RAITO_SERVER_VERSION "1.0.0-beta.34"
+#define RAITO_SERVER_VERSION "1.0.0-beta.35"
 
 // Main entry point
 int main() {
@@ -29,8 +30,7 @@ int main() {
   setenv("RAITO_SERVER_VERSION", RAITO_SERVER_VERSION, 1);
 
   string *webpageUrl = nullptr;
-  string *accessKey = nullptr;
-  string *adminAccessKey = nullptr;
+  json accessGuardOption;
   bool adminAllowOnlyLocal = true;
   int port = 8000;
 
@@ -40,6 +40,13 @@ int main() {
       new DM5(),
       new ActiveAdapter(new MHG()),
   };
+
+  // Initialize the libraries
+  FreeImage_Initialise();
+  soci::register_factory_sqlite3();
+  // FIXME dont know why this is not working
+  // soci::register_factory_mysql();
+  // soci::register_factory_postgresql();
 
   auto applyConfig = [&](json config) {
     if (config.contains("server")) {
@@ -65,11 +72,6 @@ int main() {
                            "file; some features will be disabled");
       }
     }
-
-    // set the access key
-    if (config.contains("accessKey") && !config["accessKey"].is_null() &&
-        config["accessKey"].get<string>() != "")
-      accessKey = new string(config["accessKey"].get<string>());
 
     if (config.contains("driver")) {
       json driver = config["driver"];
@@ -119,6 +121,9 @@ int main() {
         imagesManager.setInterval(image["clearCaches"].get<string>());
     }
 
+    if (config.contains("accessGuard"))
+      accessGuardOption = config["accessGuard"];
+
     if (config.contains("CMS")) {
       json cms = config["CMS"];
       if (cms.contains("enabled") && cms["enabled"].get<bool>()) {
@@ -126,13 +131,9 @@ int main() {
         driver->applyConfig(cms);
         driversManager.add(driver);
         driversManager.cmsId = new string(driver->id);
-
-        if (cms.contains("accessKey"))
-          adminAccessKey = new string(cms["accessKey"].get<string>());
-
-        if (cms.contains("allowOnlyLocal"))
-          adminAllowOnlyLocal = cms["allowOnlyLocal"].get<bool>();
       }
+
+      accessGuard.applyConfig(accessGuardOption);
     }
   };
 
@@ -150,18 +151,10 @@ int main() {
       driversManager.add(driver);
   }
 
-  // Initialize all the libraries
-  FreeImage_Initialise();
-  soci::register_factory_sqlite3();
-  // FIXME dont know why this is not working
-  // soci::register_factory_mysql();
-  // soci::register_factory_postgresql();
-
   // All libraries are initialized
   driversManager.isReady = true;
 
-  startDrogonServer(port, webpageUrl, accessKey, adminAccessKey,
-                    adminAllowOnlyLocal);
+  startDrogonServer(port, webpageUrl);
 
   FreeImage_DeInitialise();
 
