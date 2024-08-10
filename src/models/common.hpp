@@ -49,10 +49,10 @@ enum Genre {
 };
 
 static string genreString[] = {
-    "All",         "HotBlooded", "Romance", "Campus", "Yuri",   "Otokonoko",
-    "BL",          "Adventure",  "Harem",   "SciFi",  "War",    "Suspense",
-    "Speculation", "Funny",      "Fantasy", "Magic",  "Horror", "Ghosts",
-    "Historical",  "FanFi",      "Sports",  "Hentai", "Mecha",  "Restricted"};
+    "all",         "hotBlooded", "romance", "campus", "yuri",   "otokonoko",
+    "BL",          "adventure",  "harem",   "sciFi",  "war",    "suspense",
+    "speculation", "funny",      "fantasy", "magic",  "horror", "ghosts",
+    "historical",  "fanFi",      "sports",  "hentai", "mecha",  "restricted"};
 
 static string genreToString(Genre genre) { return genreString[genre]; }
 

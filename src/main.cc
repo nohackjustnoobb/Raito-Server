@@ -21,7 +21,7 @@
 // #include <soci/postgresql/soci-postgresql.h>
 #include <string>
 
-#define RAITO_SERVER_VERSION "1.0.0-beta.35"
+#define RAITO_SERVER_VERSION "1.0.0-beta.36"
 
 // Main entry point
 int main() {
