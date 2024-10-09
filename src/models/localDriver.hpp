@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../manager/driversManager.hpp"
+#include "../utils/log.hpp"
 #include "../utils/utils.hpp"
 #include "baseDriver.hpp"
 #include "manga.hpp"

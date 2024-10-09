@@ -6,12 +6,11 @@
 #include "../models/manga.hpp"
 #include "../utils/base64.hpp"
 #include "../utils/converter.hpp"
+#include "../utils/log.hpp"
 #include "../utils/mimeTypes.h"
 #include "../utils/utils.hpp"
 
 #include <drogon/drogon.h>
-#include <fmt/format.h>
-#include <nlohmann/json.hpp>
 
 #define JSON_RESPONSE_WITH_CODE(str, code)                                     \
   HttpResponsePtr resp = HttpResponse::newHttpResponse();                      \
@@ -246,6 +245,7 @@ auto getManga = [](const HttpRequestPtr &req,
 
   try {
     vector<Manga *> mangas = driver->getManga(ids, showAll);
+
     json result = json::array();
     for (Manga *manga : mangas) {
       if (proxy)

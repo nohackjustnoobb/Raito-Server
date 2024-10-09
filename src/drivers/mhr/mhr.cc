@@ -1,15 +1,9 @@
 
 #include "mhr.hpp"
 #include "../../models/manga.hpp"
-#include "utils.cc"
+#include "../../utils/utils.hpp"
 
 #include "md5.h"
-#include <algorithm>
-#include <codecvt>
-#include <ctime>
-#include <mutex>
-#include <nlohmann/json.hpp>
-#include <thread>
 
 #define TIMEOUT_LIMIT 5000
 
@@ -17,7 +11,15 @@
   if (r.status_code == 0)                                                      \
     throw "Request timeout";
 
-using namespace MHR_utils;
+cpr::Parameters mapToParameters(const map<string, string> &query) {
+  cpr::Parameters parameters;
+
+  for (const auto &pair : query) {
+    parameters.Add({pair.first, pair.second});
+  }
+
+  return parameters;
+}
 
 MHR::MHR() {
   id = "MHR";
@@ -240,7 +242,7 @@ string MHR::hash(vector<string> &list) {
   for (const string &str : list)
     result += str;
 
-  result = MHR_utils::urlEncode(result);
+  result = urlEncode(result);
 
   return MD5()(result);
 }

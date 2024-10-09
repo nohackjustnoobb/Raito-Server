@@ -1,15 +1,9 @@
 #include "mhg.hpp"
 #include "../../models/manga.hpp"
+#include "../../utils/utils.hpp"
 #include "lz-string.hpp"
-#include "utils.cc"
 
-#include <cpr/cpr.h>
-#include <ctime>
 #include <fmt/format.h>
-#include <locale>
-#include <mutex>
-#include <nlohmann/json.hpp>
-#include <thread>
 
 #define TIMEOUT_LIMIT 5000
 
@@ -18,8 +12,6 @@
 #define CHECK_TIMEOUT()                                                        \
   if (r.status_code == 0)                                                      \
     throw "Request timeout";
-
-using namespace MHG_utils;
 
 MHG::MHG() {
   id = "MHG";

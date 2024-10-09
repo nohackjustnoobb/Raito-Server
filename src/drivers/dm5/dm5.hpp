@@ -1,12 +1,8 @@
 #pragma once
 
-#include "../../models/baseDriver.hpp"
 #include "../../models/manga.hpp"
 #include "../../utils/converter.hpp"
-
-#include "node.hpp"
-
-#include <cpr/cpr.h>
+#include "../../utils/node.hpp"
 
 using namespace std;
 

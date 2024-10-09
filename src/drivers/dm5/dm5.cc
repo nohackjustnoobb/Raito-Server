@@ -1,21 +1,12 @@
 
 #include "dm5.hpp"
-
-#include "utils.cc"
-
-#include <mutex>
-#include <re2/re2.h>
-#include <thread>
-
-#include <iostream>
+#include "../../utils/utils.hpp"
 
 #define TIMEOUT_LIMIT 5000
 
 #define CHECK_TIMEOUT()                                                        \
   if (r.status_code == 0)                                                      \
     throw "Request timeout";
-
-using namespace DM5_utils;
 
 DM5::DM5() {
   id = "DM5";
@@ -117,10 +108,10 @@ vector<Manga *> DM5::getList(Genre genre, int page, Status status) {
 };
 
 vector<string> DM5::getSuggestion(string keyword) {
-  cpr::Response r = cpr::Get(
-      cpr::Url{baseUrl + "search.ashx?t=" +
-               DM5_utils::urlEncode(chineseConverter.toSimplified(keyword))},
-      cpr::Timeout{TIMEOUT_LIMIT}, header);
+  cpr::Response r =
+      cpr::Get(cpr::Url{baseUrl + "search.ashx?t=" +
+                        urlEncode(chineseConverter.toSimplified(keyword))},
+               cpr::Timeout{TIMEOUT_LIMIT}, header);
 
   CHECK_TIMEOUT()
 
@@ -138,11 +129,11 @@ vector<string> DM5::getSuggestion(string keyword) {
 };
 
 vector<Manga *> DM5::search(string keyword, int page) {
-  cpr::Response r = cpr::Get(
-      cpr::Url{baseUrl + "search?title=" +
-               DM5_utils::urlEncode(chineseConverter.toSimplified(keyword)) +
-               "&page=" + to_string(page)},
-      header, cpr::Timeout{TIMEOUT_LIMIT});
+  cpr::Response r =
+      cpr::Get(cpr::Url{baseUrl + "search?title=" +
+                        urlEncode(chineseConverter.toSimplified(keyword)) +
+                        "&page=" + to_string(page)},
+               header, cpr::Timeout{TIMEOUT_LIMIT});
 
   CHECK_TIMEOUT()
 

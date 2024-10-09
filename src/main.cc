@@ -1,6 +1,7 @@
 #include "manager/accessGuard.hpp"
 #include "manager/driversManager.hpp"
 #include "manager/imagesManager.hpp"
+#include "utils/log.hpp"
 #include "utils/utils.hpp"
 
 // Drivers
@@ -14,14 +15,11 @@
 #include "server/drogon.hpp"
 
 #include <FreeImage.h>
-#include <cstdlib>
-#include <re2/re2.h>
 #include <soci/sqlite3/soci-sqlite3.h>
 // #include <soci/mysql/soci-mysql.h>
 // #include <soci/postgresql/soci-postgresql.h>
-#include <string>
 
-#define RAITO_SERVER_VERSION "1.0.0-beta.36"
+#define RAITO_SERVER_VERSION "1.0.0-beta.37"
 
 // Main entry point
 int main() {

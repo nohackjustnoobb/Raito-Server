@@ -1,8 +1,7 @@
 #include "accessGuard.hpp"
+#include "../utils/log.hpp"
 #include "../utils/utils.hpp"
 
-#include <filesystem>
-#include <iostream>
 #include <thread>
 
 #define CREATE_TOKEN_TABLES_SQL                                                \

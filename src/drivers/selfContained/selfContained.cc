@@ -3,9 +3,6 @@
 #include "../../manager/driversManager.hpp"
 #include "../../utils/utils.hpp"
 
-#include <chrono>
-#include <rapidfuzz/fuzz.hpp>
-
 #define CHECK_ONLINE()                                                         \
   if (!isOnline)                                                               \
     throw "Database is offline";

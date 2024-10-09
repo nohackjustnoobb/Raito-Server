@@ -39,35 +39,11 @@ class Converter {
 
 public:
   string toSimplified(const string &text) {
-    wstring wide = this->wstringConverter.from_bytes(text);
-
-    wstring result;
-
-    for (const wchar_t &c : wide) {
-      // find and replace characters in simplified text
-      // keep it if not found
-      size_t index = traditional.find(c);
-      result += index == string::npos ? c : simplified[index];
-    }
-
-    return this->wstringConverter.to_bytes(result);
+    return convert(text, traditional, simplified);
   }
 
-  // This should not be used, as many traditional characters have the same
-  // simplified characters.
   string toTraditional(const string &text) {
-    wstring wide = this->wstringConverter.from_bytes(text);
-
-    wstring result;
-
-    for (const wchar_t &c : wide) {
-      // find and replace characters in traditional text
-      // keep it if not found
-      size_t index = simplified.find(c);
-      result += index == string::npos ? c : traditional[index];
-    }
-
-    return this->wstringConverter.to_bytes(result);
+    return convert(text, simplified, traditional);
   }
 
 private:
@@ -77,6 +53,21 @@ private:
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   wstring_convert<codecvt_utf8_utf16<wchar_t>> wstringConverter;
 #pragma GCC diagnostic pop
+
+  string convert(const string &text, const wstring &from, const wstring &to) {
+    wstring wide = this->wstringConverter.from_bytes(text);
+
+    wstring result;
+
+    for (const wchar_t &c : wide) {
+      // find and replace characters in traditional text
+      // keep it if not found
+      size_t index = from.find(c);
+      result += index == string::npos ? c : to[index];
+    }
+
+    return this->wstringConverter.to_bytes(result);
+  }
 
   wstring traditional =
       L"萬與醜專業叢東絲丟兩嚴喪個丬豐臨爲麗舉麼義烏樂喬習鄉書買亂爭於虧雲亙亞"

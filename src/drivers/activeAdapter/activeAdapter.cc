@@ -1,16 +1,7 @@
 #include "activeAdapter.hpp"
 #include "../../manager/driversManager.hpp"
+#include "../../utils/log.hpp"
 #include "../../utils/utils.hpp"
-
-#include <algorithm>
-#include <chrono>
-#include <fmt/core.h>
-#include <fmt/format.h>
-#include <fmt/printf.h>
-#include <fstream>
-#include <mutex>
-#include <re2/re2.h>
-#include <thread>
 
 #define CHECK_ONLINE()                                                         \
   if (!isOnline)                                                               \
@@ -37,17 +28,6 @@ ActiveAdapter::~ActiveAdapter() {
 vector<string> ActiveAdapter::getChapter(string id, string extraData) {
   CHECK_ONLINE()
 
-  string proxy;
-  if (proxies.size() >= 2) {
-    if (proxyCount < 1 || proxyCount >= proxies.size())
-      proxyCount = 1;
-
-    proxy = proxies.at(proxyCount);
-    unique_lock<std::mutex> guard(mutex);
-    proxyCount++;
-    guard.unlock();
-  }
-
   session sql(*pool);
   string urls;
   indicator ind;
@@ -55,6 +35,17 @@ vector<string> ActiveAdapter::getChapter(string id, string extraData) {
       into(urls, ind), use(id), use(extraData);
 
   if (ind == i_null) {
+    string proxy;
+    if (proxies.size() >= 2) {
+      if (proxyCount < 1 || proxyCount >= proxies.size())
+        proxyCount = 1;
+
+      proxy = proxies.at(proxyCount);
+      unique_lock<std::mutex> guard(mutex);
+      proxyCount++;
+      guard.unlock();
+    }
+
     vector<string> result = driver->getChapter(id, extraData, proxy);
 
     sql << fmt::format("UPDATE CHAPTER SET URLS = '{}' WHERE ID = :id AND "
@@ -203,15 +194,15 @@ void ActiveAdapter::mainLoop() {
 
           // remove the deleted chapter
           sql << fmt::format("DELETE FROM CHAPTER WHERE MANGA_ID = :manga_id "
-                             "AND ID NOT IN ({})",
+                             "AND IS_EXTRA = :is_extra AND ID NOT IN ({})",
                              oss.str()),
-              use(manga->id);
+              use(manga->id), use((int)isExtra);
 
           // insert only the new one
           rowset<row> rs =
-              (sql.prepare
-                   << "SELECT ID FROM CHAPTER WHERE MANGA_ID = :manga_id",
-               use(manga->id));
+              (sql.prepare << "SELECT ID FROM CHAPTER WHERE MANGA_ID = "
+                              ":manga_id AND IS_EXTRA = :is_extra",
+               use(manga->id), use((int)isExtra));
           for (auto it = rs.begin(); it != rs.end(); it++) {
             const row &row = *it;
             chaptersMap.erase(row.get<string>("ID"));

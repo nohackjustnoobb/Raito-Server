@@ -1,18 +1,12 @@
 #include "imagesManager.hpp"
 #include "../utils/base64.hpp"
+#include "../utils/log.hpp"
 #include "../utils/mimeTypes.h"
 #include "../utils/utils.hpp"
 #include "driversManager.hpp"
 
 #include "md5.h"
 #include <FreeImage.h>
-#include <chrono>
-#include <filesystem>
-#include <fmt/core.h>
-#include <fmt/format.h>
-#include <fstream>
-#include <re2/re2.h>
-#include <thread>
 
 #define SAVE_FORMAT "webp"
 #define FIF_FORMAT FIF_WEBP

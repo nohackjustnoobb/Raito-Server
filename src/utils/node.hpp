@@ -9,7 +9,6 @@ extern "C" {
 #include <lexbor/selectors/selectors.h>
 }
 
-#include <iostream>
 #include <re2/re2.h>
 
 using namespace std;

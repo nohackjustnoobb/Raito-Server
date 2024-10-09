@@ -3,10 +3,6 @@
 #include "../manager/imagesManager.hpp"
 #include "common.hpp"
 
-#include <nlohmann/json.hpp>
-#include <string>
-#include <vector>
-
 using json = nlohmann::json;
 using namespace std;
 

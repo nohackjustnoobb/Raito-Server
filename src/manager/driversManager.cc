@@ -1,8 +1,7 @@
 #include "driversManager.hpp"
+#include "../utils/log.hpp"
 #include "../utils/utils.hpp"
 #include "imagesManager.hpp"
-
-#include <algorithm>
 
 void DriversManager::add(BaseDriver *driver) {
   drivers.push_back(driver);

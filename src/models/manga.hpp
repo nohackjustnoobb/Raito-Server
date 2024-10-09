@@ -5,9 +5,6 @@
 #include "baseDriver.hpp"
 #include "common.hpp"
 
-#include <iostream>
-#include <nlohmann/json.hpp>
-
 using json = nlohmann::json;
 
 struct Chapter {
@@ -141,8 +138,15 @@ public:
     result["latest"] = latest;
     result["isEnded"] = isEnded;
     result["description"] = description;
-    result["authors"] = authors;
     result["chapters"] = chapters.toJson();
+
+    // FIXME temporary fix
+    try {
+      result["authors"] = authors;
+      result.dump();
+    } catch (...) {
+      result["authors"] = json::array();
+    }
 
     vector<string> genresString;
     for (Genre genre : genres)

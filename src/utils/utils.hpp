@@ -1,15 +1,6 @@
 #pragma once
 
-#include <ctime>
-#include <fmt/chrono.h>
-#include <fmt/color.h>
-#include <fmt/core.h>
-#include <fmt/format.h>
-#include <iomanip>
-#include <random>
 #include <re2/re2.h>
-#include <sstream>
-#include <string>
 
 using namespace std;
 
@@ -24,7 +15,7 @@ static vector<string> split(string s, RE2 r) {
   istringstream tokenizer(s);
   string token;
   while (getline(tokenizer, token, '\u001D')) {
-    splits.push_back(token);
+    splits.push_back(string(token));
   }
 
   return splits;
@@ -36,45 +27,6 @@ template <typename T> static void releaseMemory(vector<T> vector) {
     if (ptr != nullptr)
       delete ptr;
   }
-}
-
-// Log a message
-static void log(string message) {
-  time_t currentTime = time(nullptr);
-
-  fmt::println("{} {}",
-               fmt::format(fmt::fg(fmt::color::gray), "{:%Y-%m-%d %H:%M%p}",
-                           fmt::localtime(currentTime)),
-               message);
-}
-
-// Log a message with the specified origin and its color values.
-static void log(string from, string message,
-                fmt::color color = fmt::color::light_sea_green) {
-  log(fmt::format("{} {}", fmt::format(fmt::fg(color), from), message));
-}
-
-// This function should be called directly.
-static string formatStringMap(vector<vector<string>> stringMap) {
-  vector<string> mesgs = {};
-
-  for (auto const &str : stringMap)
-    mesgs.push_back(fmt::format(
-        "{}{}", fmt::format(fmt::fg(fmt::color::light_blue), "{}=", str[0]),
-        str[1]));
-
-  return fmt::format("{}", fmt::join(mesgs, " "));
-}
-
-// Log messages with a title.
-static void log(vector<vector<string>> stringMap) {
-  log(formatStringMap(stringMap));
-}
-
-// Log messages with a title, the specified origin, and its color values.
-static void log(string from, vector<vector<string>> stringMap,
-                fmt::color color = fmt::color::light_sea_green) {
-  log(from, formatStringMap(stringMap), color);
 }
 
 // Determine if a HTTP status code is successful
@@ -102,4 +54,75 @@ static string randomString(size_t length) {
   generate_n(str.begin(), length, randchar);
 
   return str;
+}
+
+static string urlEncode(const string &text) {
+  ostringstream encoded;
+  encoded.fill('0');
+  encoded << uppercase << hex;
+
+  for (char c : text) {
+    if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+      encoded << c;
+    } else if (c == ' ') {
+      encoded << '+';
+    } else {
+      encoded << '%' << setw(2) << int(static_cast<unsigned char>(c));
+    }
+  }
+
+  string encodedText = encoded.str();
+
+  RE2::GlobalReplace(&encodedText, RE2("\\+"), "%20");
+  RE2::GlobalReplace(&encodedText, RE2("\\%7E"), "~");
+  RE2::GlobalReplace(&encodedText, RE2("\\*"), "%2A");
+
+  return encodedText;
+}
+
+static string strip(const string &s) {
+  string copy = string(s);
+  RE2::GlobalReplace(&copy, RE2(R"(^\s+|\s+$)"), "");
+
+  return copy;
+}
+
+static string decompress(const string &encoded, const int &len1,
+                         const int &len2, const string &valuesString) {
+
+  vector<string> values = split(valuesString, RE2(R"(\|)"));
+  values.push_back("");
+
+  std::function<string(int)> genKey = [&](int index) -> string {
+    std::function<string(int, int)> itr = [&](int value, int num) -> string {
+      string d =
+          "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      return value <= 0 ? "" : itr(int(value / num), num) + d[value % num];
+    };
+
+    std::function<string(int, int)> tr = [&](int value, int num) -> string {
+      string tmp = itr(value, num);
+      return tmp == "" ? "0" : tmp;
+    };
+
+    int lastChar = index % len1;
+    return (index < len1 ? "" : genKey(index / len1)) +
+           (lastChar > 35 ? string(1, (char)(lastChar + 29))
+                          : tr(lastChar, 36));
+  };
+
+  int i = len2 - 1;
+  map<string, string> pairs;
+  while (i + 1) {
+    string key = genKey(i);
+    pairs[key] = values.at(i) == "" ? key : values[i];
+    i--;
+  }
+
+  string decoded = encoded;
+  for (auto pair : pairs) {
+    RE2::GlobalReplace(&decoded, RE2("\\b" + pair.first + "\\b"), pair.second);
+  }
+
+  return decoded;
 }
