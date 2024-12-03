@@ -3,9 +3,14 @@
 #include "../../manager/driversManager.hpp"
 #include "../../utils/utils.hpp"
 
+#include <iostream>
+#include <libzippp/libzippp.h>
+
 #define CHECK_ONLINE()                                                         \
   if (!isOnline)                                                               \
     throw "Database is offline";
+
+using namespace libzippp;
 
 SelfContained::SelfContained() {
   id = "SC";
@@ -113,12 +118,25 @@ void SelfContained::deleteManga(string id) {
   for (const auto &chapterId : ids)
     deleteChapter(chapterId, id);
 
+  // delete thumbnail
+  Manga *manga = getManga({id}, false).at(0);
+  if (manga->thumbnail != "")
+    imagesManager.deleteImage(this->id, "thumbnail", manga->thumbnail);
+  delete manga;
+
   // Delete manga
   sql << "DELETE FROM MANGA WHERE ID = :id", use(id);
 }
 
 Chapters SelfContained::createChapter(string extraData, string title,
                                       bool isExtra) {
+  createChapterReturnId(extraData, title, isExtra);
+
+  return getChapters(extraData);
+}
+
+string SelfContained::createChapterReturnId(string extraData, string title,
+                                            bool isExtra) {
   CHECK_ONLINE()
 
   // Create a new chapter
@@ -137,7 +155,7 @@ Chapters SelfContained::createChapter(string extraData, string title,
               .count()),
       use(title), use(extraData);
 
-  return getChapters(extraData);
+  return id;
 }
 
 Chapters SelfContained::editChapters(Chapters chapters) {
@@ -435,4 +453,189 @@ int SelfContained::generateIndex(string id) {
     return 0;
 
   return lastIndex + 1;
+}
+
+vector<string> SelfContained::downloadManga(string id, bool asCBZ) {
+  // Get the manga info
+  vector<Manga *> mangas = getManga({id}, true);
+
+  if (mangas.size() != 1)
+    throw "Manga Not Found";
+
+  Manga *manga = mangas[0];
+  string title(manga->title);
+  RE2::GlobalReplace(&title, R"(\/)", " ");
+
+  // setup zip file
+  bool failed = false;
+  void *buffer = calloc(4096, sizeof(char));
+  ZipArchive *zip =
+      ZipArchive::fromWritableBuffer(&buffer, 4096, ZipArchive::New);
+  string data;
+
+  try {
+    // add thumbnail
+    vector<string> pre;
+    string info;
+    if (!asCBZ) {
+      pre = imagesManager.getImage(this->id, "thumbnail", manga->thumbnail,
+                                   false);
+      zip->addData(fmt::format("{}/thumbnail.{}", title, pre[0]),
+                   pre[1].c_str(), pre[1].size());
+
+      info = manga->toJson().dump();
+      zip->addData(fmt::format("{}/info.json", title), info.c_str(),
+                   info.size());
+    }
+
+    session sql(*pool);
+    indicator ind;
+    rowset<row> rs =
+        (sql.prepare << "SELECT * FROM CHAPTER WHERE MANGA_ID = :manga_id",
+         use(id));
+    vector<vector<string>> imgs;
+    vector<string> cbz;
+
+    for (auto it = rs.begin(); it != rs.end(); it++) {
+      const row &row = *it;
+
+      bool isExtra = row.get<int>("IS_EXTRA") == 1;
+      string ctitle = row.get<string>("TITLE");
+      RE2::GlobalReplace(&ctitle, R"(\/)", " ");
+      string path =
+          asCBZ ? fmt::format("{}/{}/", title, isExtra ? "Extra" : "Serial")
+                : fmt::format("{}/{}/{}/", title, isExtra ? "Extra" : "Serial",
+                              ctitle);
+      zip->addEntry(path);
+
+      vector<string> urls;
+
+      // get the urls
+      ind = row.get_indicator("URLS");
+      if (ind != i_null)
+        urls = split(row.get<string>("URLS"), R"(\|)");
+
+      // create secondary zip for CBZ
+      void *secBuffer = calloc(4096, sizeof(char));
+      ZipArchive *secZip =
+          ZipArchive::fromWritableBuffer(&secBuffer, 4096, ZipArchive::New);
+
+      for (int i = 0; i < urls.size(); i++) {
+        imgs.push_back(
+            imagesManager.getImage(this->id, "manga", urls[i], false));
+
+        if (asCBZ)
+          secZip->addData(fmt::format("{}.{}", i, imgs.back()[0]),
+                          imgs.back()[1].c_str(), imgs.back()[1].size());
+        else
+          zip->addData(fmt::format("{}{}.{}", path, i, imgs.back()[0]),
+                       imgs.back()[1].c_str(), imgs.back()[1].size());
+      }
+
+      secZip->close();
+
+      if (asCBZ) {
+        imgs.clear();
+        cbz.push_back(string((char *)secBuffer, secZip->getBufferLength()));
+        zip->addData(fmt::format("{}{}.cbz", path, ctitle), cbz.back().c_str(),
+                     cbz.back().size());
+      }
+
+      ZipArchive::free(secZip);
+      free(secBuffer);
+    }
+
+    zip->close();
+    int bufferContentLength = zip->getBufferLength();
+
+    data = string((char *)buffer, bufferContentLength);
+  } catch (...) {
+    failed = true;
+  }
+
+  ZipArchive::free(zip);
+  free(buffer);
+  delete manga;
+
+  if (failed)
+    throw "Failed to Create Zip";
+
+  return {title + (asCBZ ? ".zip" : ".raito.zip"), data};
+}
+
+DetailsManga *SelfContained::uploadManga(string file) {
+  bool failed = false;
+  string id;
+  ZipArchive *zf = ZipArchive::fromBuffer(file.c_str(), file.size());
+
+  try {
+    ZipEntry thumb;
+    json info;
+    map<string, vector<ZipEntry>> serial = {};
+    map<string, vector<ZipEntry>> extra = {};
+
+    vector<ZipEntry> entries = zf->getEntries();
+    for (const auto &entry : entries) {
+      if (RE2::FullMatch(entry.getName(), R"(.*\/thumbnail\..*)"))
+        thumb = entry;
+
+      if (RE2::FullMatch(entry.getName(), R"(.*\/info.json)"))
+        info = json::parse(entry.readAsText());
+
+      string index;
+      string title;
+      if (RE2::FullMatch(entry.getName(), R"(.*\/Serial\/(.*)\/(.*)\..*)",
+                         &title, &index)) {
+        int idx = stoi(index);
+        serial[title].insert(serial[title].begin() + idx, entry);
+      } else if (RE2::FullMatch(entry.getName(), R"(.*\/Extra\/(.*)\/(.*)\..*)",
+                                &title, &index)) {
+        int idx = stoi(index);
+        extra[title].insert(extra[title].begin() + idx, entry);
+      }
+    }
+
+    // create the manga
+    Manga *result = createManga(DetailsManga::fromJson(info));
+    id = result->id;
+
+    // upload the thumbnail
+    uploadThumbnail(id, thumb.readAsText());
+
+    auto uploadChapters = [&](const vector<json> &chapters,
+                              const map<string, vector<ZipEntry>> &chapterMap) {
+      for (auto rit = chapters.rbegin(); rit != chapters.rend(); ++rit) {
+        json chapter = *rit;
+        string title = chapter["title"].get<string>();
+        string cid = createChapterReturnId(id, title, false);
+
+        if (chapterMap.contains(title)) {
+          vector<string> imgs;
+          imgs.reserve(chapterMap.at(title).size());
+
+          transform(chapterMap.at(title).begin(), chapterMap.at(title).end(),
+                    back_inserter(imgs),
+                    [](ZipEntry e) { return e.readAsText(); });
+
+          uploadMangaImages(cid, id, imgs);
+        }
+      }
+    };
+
+    // create the chapter and upload the image if it exists
+    vector<json> serialInfo = info["chapters"]["serial"].get<vector<json>>();
+    vector<json> extraInfo = info["chapters"]["extra"].get<vector<json>>();
+
+    uploadChapters(serialInfo, serial);
+    uploadChapters(extraInfo, extra);
+  } catch (...) {
+    failed = true;
+  }
+
+  ZipArchive::free(zf);
+
+  if (failed)
+    throw "Failed to Upload a Manga";
+
+  return (DetailsManga *)getManga({id}, true).at(0);
 }

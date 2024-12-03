@@ -423,6 +423,9 @@ auto createOrEditManga = [](const HttpRequestPtr &req,
     else
       result = castedDriver->editManga(manga);
 
+    GET_PROXY()
+    result->useProxy(baseUrl);
+
     JSON_RESPONSE(result->toJson().dump());
 
     delete result;
@@ -551,11 +554,8 @@ auto uploadImage = [](const HttpRequestPtr &req,
     if (contentType.find("application/json") != string::npos &&
         extraData != "") {
 
-      string baseUrl;
-      string host = req->getHeader("host");
-      if (!host.empty())
-        baseUrl =
-            fmt::format("{}://{}/", isLocalIp(host) ? "http" : "https", host);
+      // get baseUrl
+      GET_PROXY()
 
       json body = json::parse(req->getBody());
       json decoded = json::array();
@@ -608,11 +608,8 @@ auto arrangeMangaImage = [](const HttpRequestPtr &req,
       JSON_400_RESPONSE(R"({"error":"\"extra-data\" is missing."})")
     }
 
-    string baseUrl;
-    string host = req->getHeader("host");
-    if (!host.empty())
-      baseUrl =
-          fmt::format("{}://{}/", isLocalIp(host) ? "http" : "https", host);
+    // get baseUrl
+    GET_PROXY()
 
     vector<string> urls = json::parse(req->getBody());
 
@@ -753,6 +750,59 @@ auto refreshToken = [](const HttpRequestPtr &req,
   }
 };
 
+auto downloadManga = [](const HttpRequestPtr &req,
+                        function<void(const HttpResponsePtr &)> &&callback) {
+  GET_DRIVER()
+
+  try {
+    string id = req->getParameter("id");
+    if (id == "") {
+      JSON_400_RESPONSE(R"({"error":"\"id\" is missing."})")
+    }
+
+    bool asCBZ = req->getParameter("cbz") == "1";
+
+    SelfContained *castedDriver = (SelfContained *)driver;
+
+    vector<string> file = castedDriver->downloadManga(id, asCBZ);
+
+    HttpResponsePtr resp =
+        HttpResponse::newHttpResponse(k200OK, CT_APPLICATION_OCTET_STREAM);
+    resp->setBody(file[1]);
+    resp->addHeader("Content-Disposition",
+                    fmt::format(R"(attachment; filename="{}")", file[0]));
+
+    return callback(resp);
+  } catch (...) {
+    JSON_400_RESPONSE(
+        R"({"error": "An unexpected error occurred when trying to download manga."})")
+  }
+};
+
+auto uploadManga = [](const HttpRequestPtr &req,
+                      function<void(const HttpResponsePtr &)> &&callback) {
+  GET_DRIVER()
+
+  try {
+    SelfContained *castedDriver = (SelfContained *)driver;
+
+    DetailsManga *result =
+        castedDriver->uploadManga(string(req->bodyData(), req->bodyLength()));
+
+    // get baseUrl
+    GET_PROXY()
+    result->useProxy(baseUrl);
+
+    string json = result->toJson().dump();
+    delete result;
+
+    JSON_RESPONSE(json)
+  } catch (...) {
+    JSON_400_RESPONSE(
+        R"({"error": "An unexpected error occurred when trying to upload manga."})")
+  }
+};
+
 void startDrogonServer(int port, string *_webpageUrl) {
   webpageUrl = _webpageUrl;
   serverVersion = string(getenv("RAITO_SERVER_VERSION"));
@@ -850,9 +900,9 @@ void startDrogonServer(int port, string *_webpageUrl) {
                         {Post, Put, Options});
   app().registerHandler("/admin/manga/edit", deleteManga, {Delete, Options});
 
-  app().registerHandler("/admin/chapters/edit", createChapter, {Post, Options});
-  app().registerHandler("/admin/chapters/edit", editChapters, {Put, Options});
-  app().registerHandler("/admin/chapters/edit", deleteChapter,
+  app().registerHandler("/admin/chapter/edit", createChapter, {Post, Options});
+  app().registerHandler("/admin/chapter/edit", editChapters, {Put, Options});
+  app().registerHandler("/admin/chapter/edit", deleteChapter,
                         {Delete, Options});
 
   app().registerHandler("/admin/image/edit", uploadImage, {Post, Options});
@@ -865,6 +915,10 @@ void startDrogonServer(int port, string *_webpageUrl) {
   app().registerHandler("/admin/token", createToken, {Post, Options});
   app().registerHandler("/admin/token", removeToken, {Delete, Options});
   app().registerHandler("/admin/token", refreshToken, {Put, Options});
+
+  // Download and Upload Manga from Zip
+  app().registerHandler("/admin/download", downloadManga, {Get, Options});
+  app().registerHandler("/admin/upload", uploadManga, {Post, Options});
 
   log("Drogon", fmt::format("Listening on Port {}", port));
   app()

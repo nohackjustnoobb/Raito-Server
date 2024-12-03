@@ -140,27 +140,49 @@ string ImagesManager::saveImage(const string &id, const string &genre,
   // generate the hash
   string hash = MD5()(image);
   string imagePath = fmt::format("../image/{}/{}/{}.src", id, genre, hash);
-  while (filesystem::exists(imagePath)) {
-    hash = MD5()(hash + to_string(rand()));
-    imagePath = fmt::format("../image/{}/{}/{}.src", id, genre, hash);
+  if (filesystem::exists(imagePath))
+    return hash;
+
+  bool failed = false;
+  FIMEMORY *hmem = FreeImage_OpenMemory((BYTE *)&image[0], image.length());
+
+  try {
+    FREE_IMAGE_FORMAT fif = FreeImage_GetFileTypeFromMemory(hmem, 0);
+
+    if (fif == FIF_FORMAT) {
+      fstream file(imagePath, std::ios::out | ios::binary);
+      file.write(image.c_str(), image.size());
+      file.close();
+    } else {
+      FIBITMAP *dib;
+      FIBITMAP *converted_dib;
+
+      try {
+        dib = FreeImage_LoadFromMemory(fif, hmem);
+
+        // check if the image was loaded successfully
+        if (dib == nullptr)
+          throw "Failed to load image";
+
+        // save the image
+        converted_dib = FreeImage_ConvertTo24Bits(dib);
+        if (!FreeImage_Save(FIF_FORMAT, converted_dib, imagePath.c_str()))
+          throw "Failed to save image";
+      } catch (...) {
+        failed = true;
+      }
+
+      FreeImage_Unload(converted_dib);
+      FreeImage_Unload(dib);
+    }
+  } catch (...) {
+    failed = true;
   }
 
-  FIMEMORY *hmem = FreeImage_OpenMemory((BYTE *)&image[0], image.length());
-  FREE_IMAGE_FORMAT fif = FreeImage_GetFileTypeFromMemory(hmem, 0);
-  FIBITMAP *dib = FreeImage_LoadFromMemory(fif, hmem);
-
-  // check if the image was loaded successfully
-  if (dib == nullptr)
-    throw "Failed to load image";
-
-  // save the image
-  FIBITMAP *converted_dib = FreeImage_ConvertTo24Bits(dib);
-  if (!FreeImage_Save(FIF_FORMAT, converted_dib, imagePath.c_str()))
-    throw "Failed to save image";
-
-  FreeImage_Unload(converted_dib);
-  FreeImage_Unload(dib);
   FreeImage_CloseMemory(hmem);
+
+  if (failed)
+    throw "Failed to save image";
 
   return hash;
 }

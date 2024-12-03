@@ -1,8 +1,8 @@
 # Raito Server
 
-If you don't know what the server is for, check this repository [Raito-Manga](https://github.com/nohackjustnoobb/Raito-Manga). This module contains 3 drivers including `MHR`, `DM5`,`MHG`.
+If you're not familiar with the purpose of this server, check out the [Raito-Manga](https://github.com/nohackjustnoobb/Raito-Manga) repository. The documentation below provides a general overview. For a more detailed and technical guide, visit [here](https://github.com/nohackjustnoobb/Raito-Server/tree/master/doc).
 
-## Drivers Information
+## Drivers
 
 The driver is responsible for handling how the data is fetched. Each source has its own driver. There are two types of drivers: passive and active. A passive driver fetches data only when the client is requesting it. Active drivers fetch data regardless of client requests. You can write your driver by extending the `BaseDriver` or `ActiveDriver` classes. Check out the provided driver as an example. Feel free to create a pull request.
 

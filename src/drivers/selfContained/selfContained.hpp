@@ -58,11 +58,21 @@ public:
   vector<string> arrangeMangaImage(string id, string extraData,
                                    vector<string> newUrls);
 
-  // Remove the given image from the given chapter
+  // Remove the given image from the given chapter.
   void deleteMangaImage(string id, string extraData, string url);
+
+  // Generate a zip files from the given manga id.
+  // returns the filename and the contents in order.
+  vector<string> downloadManga(string id, bool asCBZ);
+
+  // Read a .raito.zip files and create a new manga.
+  // returns a pointer to the newly created manga.
+  DetailsManga *uploadManga(string file);
 
 private:
   Chapters getChapters(string extraData);
+
+  string createChapterReturnId(string extraData, string title, bool isExtra);
 
   string generateId();
 

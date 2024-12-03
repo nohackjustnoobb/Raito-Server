@@ -22,6 +22,7 @@ find_package(freeimage REQUIRED)
 find_package(SOCI REQUIRED CONFIG)
 find_package(rapidfuzz REQUIRED)
 find_package(lexbor REQUIRED)
+find_package(libzippp REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
     Drogon::Drogon
@@ -34,4 +35,5 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     soci::soci
     rapidfuzz::rapidfuzz
     lexbor::lexbor_static
+    libzippp::libzippp
 )

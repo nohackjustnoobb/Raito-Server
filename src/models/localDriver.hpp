@@ -123,6 +123,13 @@ public:
   virtual vector<Manga *> search(string keyword, int page) override {
     CHECK_ONLINE()
 
+    // if the keyword is int, treat it as an id
+    try {
+      int id = stoi(keyword);
+      return getManga({to_string(id)}, false);
+    } catch (...) {
+    }
+
     vector<string> titlesRank = extract(keyword, page * 50);
     vector<string> resultTitles;
     int padding = (page - 1) * 50;

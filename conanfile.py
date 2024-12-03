@@ -13,6 +13,7 @@ class RaitoServer(ConanFile):
         "lexbor/2.3.0",
         "soci/4.0.3",
         "rapidfuzz/3.0.4",
+        "libzippp/7.1-1.10.1",
     ]
     settings = "os", "compiler", "build_type", "arch"
     generators = "CMakeDeps", "CMakeToolchain"
