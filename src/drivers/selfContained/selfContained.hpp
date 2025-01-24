@@ -69,6 +69,11 @@ public:
   // returns a pointer to the newly created manga.
   DetailsManga *uploadManga(string file);
 
+  // Read a .cbz file and create a new chapter for the given manga id.
+  // returns the updated Chapters.
+  Chapters uploadChapter(string extraData, string title, bool isExtra,
+                         string file);
+
 private:
   Chapters getChapters(string extraData);
 

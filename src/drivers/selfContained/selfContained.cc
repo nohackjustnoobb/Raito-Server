@@ -566,9 +566,13 @@ vector<string> SelfContained::downloadManga(string id, bool asCBZ) {
 DetailsManga *SelfContained::uploadManga(string file) {
   bool failed = false;
   string id;
+
   ZipArchive *zf = ZipArchive::fromBuffer(file.c_str(), file.size());
 
   try {
+    if (zf == nullptr)
+      throw "Invalid zip archive";
+
     ZipEntry thumb;
     json info;
     map<string, vector<ZipEntry>> serial = {};
@@ -638,4 +642,34 @@ DetailsManga *SelfContained::uploadManga(string file) {
     throw "Failed to Upload a Manga";
 
   return (DetailsManga *)getManga({id}, true).at(0);
+}
+
+Chapters SelfContained::uploadChapter(string extraData, string title,
+                                      bool isExtra, string file) {
+  bool failed = false;
+  ZipArchive *zf = ZipArchive::fromBuffer(file.c_str(), file.size());
+
+  try {
+    if (zf == nullptr)
+      throw "Invalid zip archive";
+
+    string id = createChapterReturnId(extraData, title, isExtra);
+
+    vector<string> imgs;
+    vector<ZipEntry> entries = zf->getEntries();
+    for (const auto &entry : entries) {
+      imgs.push_back(entry.readAsText());
+    }
+
+    uploadMangaImages(id, extraData, imgs);
+  } catch (...) {
+    failed = true;
+  }
+
+  ZipArchive::free(zf);
+
+  if (failed)
+    throw "Failed to Upload a Chapter";
+
+  return getChapters(extraData);
 }

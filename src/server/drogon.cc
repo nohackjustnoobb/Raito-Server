@@ -803,6 +803,32 @@ auto uploadManga = [](const HttpRequestPtr &req,
   }
 };
 
+auto uploadChapter = [](const HttpRequestPtr &req,
+                        function<void(const HttpResponsePtr &)> &&callback) {
+  GET_DRIVER()
+
+  try {
+    string keys[] = {"extra-data", "title", "is-extra"};
+    for (const auto &key : keys) {
+      if (req->getParameter(key) == "") {
+        JSON_400_RESPONSE(R"({"error":"\")" + key + R"(\" is missing."})");
+      }
+    }
+
+    SelfContained *castedDriver = (SelfContained *)driver;
+
+    Chapters result = castedDriver->uploadChapter(
+        req->getParameter("extra-data"), req->getParameter("title"),
+        req->getParameter("is-extra") == "1",
+        string(req->bodyData(), req->bodyLength()));
+
+    JSON_RESPONSE(result.toJson().dump());
+  } catch (...) {
+    JSON_400_RESPONSE(
+        R"({"error": "An unexpected error occurred when trying to upload chapter."})")
+  }
+};
+
 void startDrogonServer(int port, string *_webpageUrl) {
   webpageUrl = _webpageUrl;
   serverVersion = string(getenv("RAITO_SERVER_VERSION"));
@@ -917,8 +943,10 @@ void startDrogonServer(int port, string *_webpageUrl) {
   app().registerHandler("/admin/token", refreshToken, {Put, Options});
 
   // Download and Upload Manga from Zip
-  app().registerHandler("/admin/download", downloadManga, {Get, Options});
-  app().registerHandler("/admin/upload", uploadManga, {Post, Options});
+  app().registerHandler("/admin/manga/download", downloadManga, {Get, Options});
+  app().registerHandler("/admin/manga/upload", uploadManga, {Post, Options});
+  app().registerHandler("/admin/chapter/upload", uploadChapter,
+                        {Post, Options});
 
   log("Drogon", fmt::format("Listening on Port {}", port));
   app()
