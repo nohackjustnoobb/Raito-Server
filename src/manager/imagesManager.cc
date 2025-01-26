@@ -87,6 +87,8 @@ vector<string> ImagesManager::getImage(const string &id, const string &genre,
   string url;
   getline(ifs, url);
 
+  RE2::GlobalReplace(&url, " ", "%20");
+
   // fetch the image
   cpr::Session session;
   session.SetUrl(cpr::Url(url));
