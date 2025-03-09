@@ -14,7 +14,7 @@ using namespace libzippp;
 
 SelfContained::SelfContained() {
   id = "SC";
-  version = "1.0.0-beta.1";
+  version = "1.0.0";
   supportSuggestion = true;
   supportedGenres = {
       All,         HotBlooded, Romance, Campus, Yuri,   Otokonoko,

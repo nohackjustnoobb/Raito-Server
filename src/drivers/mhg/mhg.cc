@@ -15,7 +15,7 @@
 
 MHG::MHG() {
   id = "MHG";
-  version = "1.0.0-beta.7";
+  version = "1.0.0";
 
   supportSuggestion = false;
   recommendedChunkSize = 5;

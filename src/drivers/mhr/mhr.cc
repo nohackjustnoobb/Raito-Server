@@ -23,7 +23,7 @@ cpr::Parameters mapToParameters(const map<string, string> &query) {
 
 MHR::MHR() {
   id = "MHR";
-  version = "1.0.0-beta.5";
+  version = "1.0.0";
 
   supportSuggestion = true;
   for (const auto &pair : genreId)

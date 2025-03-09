@@ -19,7 +19,7 @@
 // #include <soci/mysql/soci-mysql.h>
 // #include <soci/postgresql/soci-postgresql.h>
 
-#define RAITO_SERVER_VERSION "1.0.0-beta.40"
+#define RAITO_SERVER_VERSION "1.0.0"
 
 // Main entry point
 int main() {
